@@ -42,16 +42,25 @@ export function useSocketEvents() {
       }
     };
 
+    const handleConversationNew = (conversation: any) => {
+      // Force join the new conversation room
+      socket.emit('conversation:join', { conversationId: conversation.id });
+      // Add to store if not exists
+      useChatStore.getState().fetchConversations();
+    };
+
     socket.on('message:new', handleNewMessage);
     socket.on('presence:update', handlePresence);
     socket.on('typing:update', handleTyping);
     socket.on('notification:new', handleNotification);
+    socket.on('conversation:new', handleConversationNew);
 
     return () => {
       socket.off('message:new', handleNewMessage);
       socket.off('presence:update', handlePresence);
       socket.off('typing:update', handleTyping);
       socket.off('notification:new', handleNotification);
+      socket.off('conversation:new', handleConversationNew);
     };
   }, [addMessage, setUserOnline, setUserOffline, setTyping, clearTyping, addNotification]);
 }

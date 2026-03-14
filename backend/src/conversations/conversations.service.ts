@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class ConversationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => ChatGateway))
+    private readonly chatGateway: ChatGateway,
+  ) {}
 
   async listConversations(userId: string) {
     const conversations = await this.prisma.conversation.findMany({
@@ -59,7 +64,7 @@ export class ConversationsService {
 
     if (existing) return existing;
 
-    return this.prisma.conversation.create({
+    const conversation = await this.prisma.conversation.create({
       data: {
         type: 'DIRECT',
         participants: {
@@ -77,6 +82,11 @@ export class ConversationsService {
         },
       },
     });
+
+    // Notify participants to join the new conversation room
+    this.chatGateway.server.to(`user:${userId}`).to(`user:${participantId}`).emit('conversation:new', conversation);
+
+    return conversation;
   }
 
   async getConversation(userId: string, conversationId: string) {

@@ -126,9 +126,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
       conversationId: msgData.conversationId,
     };
 
-    set((state) => ({
-      messages: [...state.messages, optimisticMsg]
-    }));
+    set((state) => {
+      // Update messages
+      const nextMessages = [...state.messages, optimisticMsg];
+      
+      // Update conversation last message in Sidebar (Optimistic)
+      const nextConversations = state.conversations.map(conv => 
+        conv.id === optimisticMsg.conversationId 
+          ? { ...conv, lastMessage: optimisticMsg, updatedAt: optimisticMsg.createdAt }
+          : conv
+      );
+
+      return {
+        messages: nextMessages,
+        conversations: nextConversations
+      };
+    });
 
     return tempId;
   },
