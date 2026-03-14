@@ -76,18 +76,6 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <span className="font-extrabold text-xl bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">PulseChat</span>
         </div>
-
-        {/* Notification bell */}
-        <div className="relative">
-          <svg className="w-5 h-5 text-[var(--text-secondary)] cursor-pointer hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-          </svg>
-          {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center text-white" style={{ background: 'var(--danger)' }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </div>
       </div>
 
       {/* Rooms */}
@@ -208,7 +196,14 @@ export function Sidebar({ onClose }: SidebarProps) {
       </div>
 
       {/* User profile */}
-      <div className="border-t p-3" style={{ borderColor: 'var(--border)' }}>
+      <div className="border-t p-4" style={{ borderColor: 'var(--border)' }}>
+        <button
+          onClick={logout}
+          className="w-full mb-3 py-2 rounded-xl text-white font-bold text-sm transition-all duration-200 shadow hover:shadow-lg active:scale-[0.98]"
+          style={{ background: 'var(--danger)' }}
+        >
+          Logout
+        </button>
         <div className="flex items-center gap-2.5">
           <div className="relative">
             <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-bold text-white shadow-md" style={{ background: 'linear-gradient(135deg, var(--accent), #60a5fa)' }}>
@@ -220,16 +215,6 @@ export function Sidebar({ onClose }: SidebarProps) {
             <div className="font-bold text-[15px] text-slate-800 truncate">{user?.username}</div>
             <div className="text-xs font-medium text-slate-500 mt-0.5">{user?.isGuest ? 'Guest User' : 'Online'}</div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center justify-center p-2.5 rounded-xl text-white transition-all duration-200 shadow hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]"
-            style={{ background: 'var(--danger)' }}
-            title="Logout"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-          </button>
         </div>
       </div>
     </div>

@@ -144,7 +144,11 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           onClick={handleSend}
           disabled={!content.trim()}
           className="p-3 rounded-2xl transition-all duration-300 shrink-0 disabled:opacity-30 disabled:scale-95"
-          style={{ background: content.trim() ? 'linear-gradient(135deg, #1a73e8, #0052cc)' : 'transparent', color: content.trim() ? 'white' : 'var(--text-muted)', boxShadow: content.trim() ? '0 4px 12px rgba(26,115,232,0.3)' : 'none' }}
+          style={{ 
+            background: content.trim() ? '#25D366' : 'transparent', 
+            color: content.trim() ? 'white' : 'var(--text-muted)', 
+            boxShadow: content.trim() ? '0 4px 12px rgba(37, 211, 102, 0.4)' : 'none' 
+          }}
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
