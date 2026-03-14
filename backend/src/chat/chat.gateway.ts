@@ -1,0 +1,208 @@
+import {
+  WebSocketGateway,
+  WebSocketServer,
+  SubscribeMessage,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  ConnectedSocket,
+  MessageBody,
+} from '@nestjs/websockets';
+import { Logger, UseGuards } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { RedisService } from '../redis/redis.service';
+import { MessagesService } from '../messages/messages.service';
+import { ModerationService } from '../moderation/moderation.service';
+import { NotificationsService } from '../notifications/notifications.service';
+
+interface AuthenticatedSocket extends Socket {
+  data: { user: { sub: string; username: string; role: string } };
+}
+
+@WebSocketGateway({
+  cors: { origin: '*', credentials: true },
+  namespace: '/',
+  transports: ['websocket', 'polling'],
+})
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server: Server;
+  private readonly logger = new Logger(ChatGateway.name);
+
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+    private readonly redis: RedisService,
+    private readonly messagesService: MessagesService,
+    private readonly moderationService: ModerationService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
+
+  async handleConnection(client: AuthenticatedSocket) {
+    try {
+      const token = client.handshake.auth?.token || client.handshake.headers?.authorization?.replace('Bearer ', '');
+      if (!token) {
+        client.disconnect();
+        return;
+      }
+
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get<string>('JWT_SECRET'),
+      });
+
+      client.data.user = payload;
+      const userId = payload.sub;
+
+      await this.redis.mapSocketToUser(client.id, userId);
+      await this.redis.setUserOnline(userId);
+
+      this.server.emit('presence:update', { userId, status: 'online' });
+      this.logger.log(`Client connected: ${payload.username} (${client.id})`);
+    } catch (error) {
+      this.logger.warn(`Connection rejected: ${error instanceof Error ? error.message : 'Invalid token'}`);
+      client.disconnect();
+    }
+  }
+
+  async handleDisconnect(client: AuthenticatedSocket) {
+    const userId = await this.redis.unmapSocket(client.id);
+    if (userId) {
+      const remaining = await this.redis.getUserSockets(userId);
+      if (remaining.length === 0) {
+        await this.redis.setUserOffline(userId);
+        this.server.emit('presence:update', { userId, status: 'offline', lastSeen: new Date().toISOString() });
+      }
+    }
+    this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage('room:join')
+  async handleRoomJoin(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    client.join(`room:${data.roomId}`);
+    this.logger.debug(`${client.data.user.username} joined room:${data.roomId}`);
+    return { event: 'room:joined', data: { roomId: data.roomId } };
+  }
+
+  @SubscribeMessage('room:leave')
+  async handleRoomLeave(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { roomId: string },
+  ) {
+    client.leave(`room:${data.roomId}`);
+    return { event: 'room:left', data: { roomId: data.roomId } };
+  }
+
+  @SubscribeMessage('message:send')
+  async handleMessage(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { content: string; roomId?: string; conversationId?: string; type?: string },
+  ) {
+    const userId = client.data.user.sub;
+
+    const allowed = await this.redis.checkRateLimit(`msg:${userId}`, 30, 60);
+    if (!allowed) {
+      client.emit('error', { message: 'Rate limit exceeded. Please slow down.' });
+      return;
+    }
+
+    const moderation = this.moderationService.validateMessage(data.content);
+    if (!moderation.valid) {
+      client.emit('error', { message: moderation.reason });
+      return;
+    }
+
+    const cleanContent = moderation.filtered || data.content;
+
+    const message = await this.messagesService.createMessage({
+      content: cleanContent,
+      senderId: userId,
+      roomId: data.roomId,
+      conversationId: data.conversationId,
+      type: (data.type as any) || 'TEXT',
+    });
+
+    if (data.roomId) {
+      this.server.to(`room:${data.roomId}`).emit('message:new', message);
+    } else if (data.conversationId) {
+      this.server.to(`conversation:${data.conversationId}`).emit('message:new', message);
+    }
+
+    client.emit('message:ack', { messageId: message.id, status: 'SENT' });
+
+    const mentions = await this.messagesService.detectMentions(cleanContent);
+    if (mentions.length > 0) {
+      await this.notificationsService.createMentionNotifications(mentions, message.id, userId);
+    }
+  }
+
+  @SubscribeMessage('message:delivered')
+  async handleDelivered(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    await this.messagesService.updateStatus(data.messageId, 'DELIVERED');
+  }
+
+  @SubscribeMessage('message:read')
+  async handleRead(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; conversationId?: string; roomId?: string },
+  ) {
+    await this.messagesService.updateStatus(data.messageId, 'READ');
+    const target = data.conversationId ? `conversation:${data.conversationId}` : `room:${data.roomId}`;
+    this.server.to(target).emit('message:read', {
+      messageId: data.messageId,
+      userId: client.data.user.sub,
+    });
+  }
+
+  @SubscribeMessage('typing:start')
+  async handleTypingStart(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { targetId: string; targetType: 'room' | 'conversation' },
+  ) {
+    const userId = client.data.user.sub;
+    await this.redis.setTyping(userId, data.targetId, data.targetType);
+    const target = `${data.targetType}:${data.targetId}`;
+    client.to(target).emit('typing:update', {
+      userId,
+      username: client.data.user.username,
+      isTyping: true,
+    });
+  }
+
+  @SubscribeMessage('typing:stop')
+  async handleTypingStop(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { targetId: string; targetType: 'room' | 'conversation' },
+  ) {
+    const userId = client.data.user.sub;
+    await this.redis.clearTyping(userId, data.targetId, data.targetType);
+    const target = `${data.targetType}:${data.targetId}`;
+    client.to(target).emit('typing:update', {
+      userId,
+      username: client.data.user.username,
+      isTyping: false,
+    });
+  }
+
+  @SubscribeMessage('conversation:join')
+  async handleConversationJoin(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    client.join(`conversation:${data.conversationId}`);
+    return { event: 'conversation:joined', data: { conversationId: data.conversationId } };
+  }
+
+  @SubscribeMessage('conversation:leave')
+  async handleConversationLeave(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { conversationId: string },
+  ) {
+    client.leave(`conversation:${data.conversationId}`);
+  }
+}

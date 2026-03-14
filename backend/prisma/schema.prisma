@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  FILE
+  SYSTEM
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+}
+
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+enum NotificationType {
+  MENTION
+  MESSAGE
+  ROOM_INVITE
+  SYSTEM
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String?    @unique
+  username     String     @unique
+  passwordHash String?
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  avatar       String?
+  bio          String?
+  isGuest      Boolean    @default(false)
+  lastSeen     DateTime   @default(now())
+  refreshToken String?
+  language     String     @default("en")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  messages                Message[]
+  conversationParticipants ConversationParticipant[]
+  roomMembers             RoomMember[]
+  createdRooms            Room[]          @relation("RoomCreator")
+  mediaFiles              MediaFile[]
+  notifications           Notification[]
+
+  @@index([email])
+  @@index([username])
+  @@index([status])
+}
+
+model Conversation {
+  id        String           @id @default(uuid())
+  type      ConversationType @default(DIRECT)
+  name      String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([type])
+}
+
+model ConversationParticipant {
+  id             String   @id @default(uuid())
+  userId         String
+  conversationId String
+  lastReadAt     DateTime @default(now())
+  joinedAt       DateTime @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, conversationId])
+  @@index([userId])
+  @@index([conversationId])
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  content        String
+  type           MessageType   @default(TEXT)
+  status         MessageStatus @default(SENT)
+  metadata       Json?
+  senderId       String
+  conversationId String?
+  roomId         String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  sender       User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  room         Room?         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  mediaFiles   MediaFile[]
+
+  @@index([senderId])
+  @@index([conversationId])
+  @@index([roomId])
+  @@index([createdAt])
+}
+
+model Room {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isDefault   Boolean  @default(false)
+  isSponsored Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User?        @relation("RoomCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  members     RoomMember[]
+  messages    Message[]
+
+  @@index([name])
+  @@index([isDefault])
+}
+
+model RoomMember {
+  id       String   @id @default(uuid())
+  userId   String
+  roomId   String
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roomId])
+  @@index([userId])
+  @@index([roomId])
+}
+
+model MediaFile {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  url          String
+  uploadedById String
+  messageId    String?
+  createdAt    DateTime @default(now())
+
+  uploadedBy User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  message    Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  @@index([uploadedById])
+  @@index([messageId])
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  userId      String
+  type        NotificationType @default(MESSAGE)
+  content     String
+  read        Boolean          @default(false)
+  referenceId String?
+  createdAt   DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
