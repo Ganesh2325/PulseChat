@@ -13,6 +13,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { RedisModule } from './redis/redis.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -34,5 +35,6 @@ import { HealthModule } from './health/health.module';
     NotificationsModule,
     HealthModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
