@@ -188,18 +188,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
     return data;
   },
 
-  deleteConversation: async (conversationId) => {
-    try {
-      // Logic: Mark as deleted locally and optionally call API
-      // If there's no backend "delete" endpoint yet, we just handle it locally
-      set((state) => ({
-        conversations: state.conversations.filter(c => c.id !== conversationId),
-        currentConversation: state.currentConversation?.id === conversationId ? null : state.currentConversation
-      }));
-    } catch (error) {
-      console.error('Failed to delete conversation:', error);
-    }
-  },
-
   clearMessages: () => set({ messages: [] }),
 }));
