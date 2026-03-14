@@ -12,6 +12,7 @@ interface Message {
   conversationId?: string;
   mediaFiles?: any[];
   createdAt: string;
+  isOptimistic?: boolean;
 }
 
 interface Room {
@@ -49,6 +50,7 @@ interface ChatState {
   joinRoom: (roomId: string) => Promise<void>;
   createConversation: (participantId: string) => Promise<Conversation>;
   deleteConversation: (conversationId: string) => Promise<void>;
+  addOptimisticMessage: (message: Partial<Message>) => string;
   clearMessages: () => void;
 }
 
@@ -98,15 +100,64 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  deleteConversation: async (conversationId) => {
+    try {
+      set((state) => ({
+        conversations: state.conversations.filter(c => c.id !== conversationId),
+        currentConversation: state.currentConversation?.id === conversationId ? null : state.currentConversation
+      }));
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
+  },
+
+  addOptimisticMessage: (msgData) => {
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: msgData.content || '',
+      type: msgData.type || 'TEXT',
+      status: 'SENDING',
+      senderId: msgData.senderId || '',
+      sender: msgData.sender || { id: '', username: '', avatar: null },
+      createdAt: new Date().toISOString(),
+      isOptimistic: true,
+      roomId: msgData.roomId,
+      conversationId: msgData.conversationId,
+    };
+
+    set((state) => ({
+      messages: [...state.messages, optimisticMsg]
+    }));
+
+    return tempId;
+  },
+
   addMessage: (message) => {
     set((state) => {
-      // 1. Check if the message is for the currently active view
-      const isRelevant = (state.currentRoom && message.roomId === state.currentRoom.id) ||
-                        (state.currentConversation && message.conversationId === state.currentConversation.id);
-      
-      const exists = state.messages.some((m) => m.id === message.id);
-      
-      // 2. Update conversations list with the last message preview (affects Sidebar)
+      // 1. Check if this real message should replace an optimistic one
+      // We look for a message with the same content and sender sent in the last 5 seconds
+      const optimisticMatch = state.messages.find(m => 
+        m.isOptimistic && 
+        m.content === message.content && 
+        m.senderId === message.senderId &&
+        (new Date(message.createdAt).getTime() - new Date(m.createdAt).getTime()) < 5000
+      );
+
+      let nextMessages = state.messages;
+      if (optimisticMatch) {
+        nextMessages = state.messages.map(m => m.id === optimisticMatch.id ? message : m);
+      } else {
+        const isRelevant = (state.currentRoom && message.roomId === state.currentRoom.id) ||
+                          (state.currentConversation && message.conversationId === state.currentConversation.id);
+        const exists = state.messages.some((m) => m.id === message.id);
+        
+        if (isRelevant && !exists) {
+          nextMessages = [...state.messages, message];
+        }
+      }
+
+      // 2. Update conversations list
       let nextConversations = state.conversations;
       if (message.conversationId) {
         nextConversations = state.conversations.map(conv => 
@@ -116,11 +167,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         );
       }
 
-      // 3. Update active message list if relevant
-      if (!isRelevant || exists) return { conversations: nextConversations };
-      
       return { 
-        messages: [...state.messages, message],
+        messages: nextMessages,
         conversations: nextConversations
       };
     });

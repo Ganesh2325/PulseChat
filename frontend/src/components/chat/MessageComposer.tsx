@@ -3,6 +3,9 @@
 import { useState, useRef, useCallback } from 'react';
 import { getSocket } from '@/lib/socket';
 import api from '@/lib/api';
+import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '@/stores/chatStore';
+
 
 interface MessageComposerProps {
   targetId: string;
@@ -21,6 +24,21 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
 
     const socket = getSocket();
     if (!socket) return;
+
+    const currentUserId = useAuthStore.getState().user?.id;
+    const currentUser = useAuthStore.getState().user;
+
+    // Add optimistic message
+    useChatStore.getState().addOptimisticMessage({
+      content: content.trim(),
+      senderId: currentUserId || '',
+      sender: {
+        id: currentUserId || '',
+        username: currentUser?.username || 'You',
+        avatar: currentUser?.avatar || null
+      },
+      [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
+    });
 
     socket.emit('message:send', {
       content: content.trim(),

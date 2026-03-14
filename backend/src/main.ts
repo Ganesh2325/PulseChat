@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -42,6 +44,25 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Redis Adapter for Socket.IO Scaling
+  const redisUrl = configService.get<string>('REDIS_URL');
+  if (redisUrl) {
+    const pubClient = createClient({ url: redisUrl });
+    const subClient = pubClient.duplicate();
+    
+    await Promise.all([pubClient.connect(), subClient.connect()]);
+    
+    app.useWebSocketAdapter({
+      create(port: number, options?: any) {
+        const server = (app as any).getHttpServer();
+        const adapter = createAdapter(pubClient, subClient);
+        return (app as any).getWebSocketAdapter().create(port, { ...options, adapter });
+      }
+    } as any);
+    
+    logger.log('Redis Socket.IO adapter initialized');
+  }
 
   app.enableShutdownHooks();
 
