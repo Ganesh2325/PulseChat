@@ -3,7 +3,7 @@ import { ChatGateway } from './chat.gateway';
 import { MessagesModule } from '../messages/messages.module';
 import { ModerationModule } from '../moderation/moderation.module';
 import { NotificationsModule } from '../notifications/notifications.module';
-import { AuthModule } '../auth/auth.module';
+import { AuthModule } from '../auth/auth.module';
 import { RoomsModule } from '../rooms/rooms.module';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { RedisModule } from '../redis/redis.module';
