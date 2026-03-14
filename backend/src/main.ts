@@ -16,6 +16,14 @@ async function bootstrap() {
   const corsOrigin = configService.get<string>('CORS_ORIGIN', 'http://localhost:3000');
   const origins = corsOrigin.split(',').map(o => o.trim());
 
+  const jwtSecret = configService.get<string>('JWT_SECRET');
+  if (!jwtSecret) {
+    logger.error('CRITICAL: JWT_SECRET environment variable is missing!');
+  } else {
+    // Log a partial value to confirm it's loaded without exposing the full secret
+    logger.log(`JWT_SECRET is visible (first 4 chars: ${jwtSecret.substring(0, 4)}...)`);
+  }
+
   app.enableCors({
     origin: origins.length > 1 ? origins : origins[0],
     credentials: true,
