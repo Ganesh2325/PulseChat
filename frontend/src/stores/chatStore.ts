@@ -48,6 +48,7 @@ interface ChatState {
   addMessage: (message: Message) => void;
   joinRoom: (roomId: string) => Promise<void>;
   createConversation: (participantId: string) => Promise<Conversation>;
+  deleteConversation: (conversationId: string) => Promise<void>;
   clearMessages: () => void;
 }
 
@@ -134,9 +135,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { conversations } = get();
     const exists = conversations.find((c) => c.id === data.id);
     if (!exists) {
-      set({ conversations: [...conversations, data] });
+      set({ conversations: [data, ...conversations] });
     }
     return data;
+  },
+
+  deleteConversation: async (conversationId) => {
+    try {
+      // Logic: Mark as deleted locally and optionally call API
+      // If there's no backend "delete" endpoint yet, we just handle it locally
+      set((state) => ({
+        conversations: state.conversations.filter(c => c.id !== conversationId),
+        currentConversation: state.currentConversation?.id === conversationId ? null : state.currentConversation
+      }));
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+    }
   },
 
   clearMessages: () => set({ messages: [] }),

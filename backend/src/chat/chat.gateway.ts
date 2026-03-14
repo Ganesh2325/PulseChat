@@ -7,6 +7,8 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { RoomsService } from '../rooms/rooms.service';
+import { ConversationsService } from '../conversations/conversations.service';
 import { Logger, UseGuards } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -36,6 +38,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly messagesService: MessagesService,
     private readonly moderationService: ModerationService,
     private readonly notificationsService: NotificationsService,
+    private readonly roomsService: RoomsService,
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   async handleConnection(client: AuthenticatedSocket) {
@@ -56,8 +60,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.redis.mapSocketToUser(client.id, userId);
       await this.redis.setUserOnline(userId);
 
+      // Join personal room
+      client.join(`user:${userId}`);
+
+      // Auto-join all rooms user is a member of
+      const userRooms = await this.roomsService.getUserRooms(userId);
+      userRooms.forEach((room: { id: string }) => {
+        client.join(`room:${room.id}`);
+      });
+
+      // Auto-join all existing conversations
+      const userConversations = await this.conversationsService.getUserConversations(userId);
+      userConversations.forEach((conv: { id: string }) => {
+        client.join(`conversation:${conv.id}`);
+      });
+
       this.server.emit('presence:update', { userId, status: 'online' });
-      this.logger.log(`Client connected: ${payload.username} (${client.id})`);
+      this.logger.log(`Client connected: ${payload.username} (${client.id}) and joined ${userRooms.length} rooms and ${userConversations.length} conversations`);
     } catch (error) {
       this.logger.warn(`Connection rejected: ${error instanceof Error ? error.message : 'Invalid token'}`);
       client.disconnect();

@@ -118,4 +118,13 @@ export class RoomsService implements OnModuleInit {
     });
     return !!member;
   }
+
+  async getUserRooms(userId: string) {
+    return this.prisma.room.findMany({
+      where: {
+        members: { some: { userId } },
+      },
+      select: { id: true },
+    });
+  }
 }

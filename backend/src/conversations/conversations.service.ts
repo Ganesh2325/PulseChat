@@ -127,4 +127,13 @@ export class ConversationsService {
     });
     return !!participant;
   }
+
+  async getUserConversations(userId: string) {
+    return this.prisma.conversation.findMany({
+      where: {
+        participants: { some: { userId } },
+      },
+      select: { id: true },
+    });
+  }
 }
