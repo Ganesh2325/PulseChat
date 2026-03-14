@@ -47,7 +47,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
 
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: this.configService.get<string>('JWT_SECRET') || process.env.JWT_SECRET,
       });
 
       client.data.user = payload;
@@ -101,6 +101,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { content: string; roomId?: string; conversationId?: string; type?: string },
   ) {
     const userId = client.data.user.sub;
+    this.logger.debug(`Message from ${client.data.user.username}: content len=${data.content?.length}, room=${data.roomId}, conv=${data.conversationId}`);
+
 
     const allowed = await this.redis.checkRateLimit(`msg:${userId}`, 30, 60);
     if (!allowed) {
