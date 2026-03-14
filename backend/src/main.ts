@@ -14,11 +14,13 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const port = configService.get<number>('BACKEND_PORT', 4000);
   const corsOrigin = configService.get<string>('CORS_ORIGIN', 'http://localhost:3000');
+  const origins = corsOrigin.split(',').map(o => o.trim());
 
   app.enableCors({
-    origin: corsOrigin,
+    origin: origins.length > 1 ? origins : origins[0],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   app.useGlobalPipes(
