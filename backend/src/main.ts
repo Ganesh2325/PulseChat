@@ -7,10 +7,11 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
 import { RedisIoAdapter } from './chat/redis-io.adapter';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
 
@@ -58,6 +59,13 @@ async function bootstrap() {
       logger.error(`❌ Failed to initialize Redis adapter: ${error.message}. Falling back to default adapter.`);
     }
   }
+
+  // Serve static files from the uploads directory
+  const uploadDir = configService.get<string>('UPLOAD_DIR', './uploads');
+  app.useStaticAssets(join(process.cwd(), uploadDir), {
+    prefix: '/uploads/',
+  });
+  logger.log(`Static assets served from: ${uploadDir}`);
 
   app.enableShutdownHooks();
 

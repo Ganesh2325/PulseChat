@@ -98,7 +98,7 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
                 <div key={file.id}>
                   {file.mimeType?.startsWith('image/') ? (
                     <img
-                      src={file.url.startsWith('http') ? file.url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${file.url}`}
+                      src={file.url.startsWith('http') ? file.url : `${process.env.NEXT_PUBLIC_API_URL || 'https://pulsechat-backend.onrender.com'}${file.url}`}
                       alt={file.originalName}
                       className="max-w-full rounded-lg max-h-80 object-contain my-1 border border-black/5 shadow-sm"
                       onLoad={() => {
