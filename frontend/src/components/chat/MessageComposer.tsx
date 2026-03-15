@@ -15,9 +15,7 @@ interface MessageComposerProps {
 
 export function MessageComposer({ targetId, targetType, targetName }: MessageComposerProps) {
   const [content, setContent] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [content, setContent] = useState('');
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = useCallback(() => {
@@ -69,78 +67,9 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     }, 3000);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Strict 2MB Limit check
-    if (file.size > 2 * 1024 * 1024) {
-      setUploadError('Image is more than 2MB');
-      setTimeout(() => setUploadError(null), 4000);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    setUploadError(null);
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { data: media } = await api.post('/media/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const socket = getSocket();
-      socket?.emit('message:send', {
-        content: `📎 ${file.name}`,
-        [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
-        type: file.type.startsWith('image/') ? 'IMAGE' : file.type.startsWith('video/') ? 'VIDEO' : 'FILE',
-        mediaIds: [media.id],
-      });
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setUploadError('Upload failed. Please try again.');
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-
-
   return (
     <div className="px-6 py-5 shrink-0 bg-white border-t border-slate-200 shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.05)] z-20">
       <div className="flex items-end gap-3 rounded-[28px] p-3 bg-slate-50 border border-slate-200 focus-within:bg-white focus-within:border-[#1a73e8] focus-within:ring-4 focus-within:ring-[#1a73e8]/15 focus-within:shadow-lg transition-all duration-300">
-        {/* File upload */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-          className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)] shrink-0"
-          title="Upload file"
-        >
-          {isUploading ? (
-            <div className="w-5 h-5 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
-          ) : (
-            <svg className="w-6 h-6 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-            </svg>
-          )}
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          onChange={handleFileUpload}
-          className="hidden"
-          accept="image/*,video/*,.pdf,.txt"
-        />
-
-        {/* Status messages / Errors */}
-        {uploadError && (
-          <div className="absolute -top-10 left-6 text-red-500 text-xs font-bold bg-white px-3 py-1.5 rounded-full border border-red-100 shadow-sm animate-pop-in">
-            ⚠️ {uploadError}
-          </div>
-        )}
-
         <textarea
           id="message-input"
           value={content}
