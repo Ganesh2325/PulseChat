@@ -6,6 +6,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { createClient } from 'redis';
+import { RedisIoAdapter } from './chat/redis-io.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -49,33 +50,12 @@ async function bootstrap() {
   const redisUrl = configService.get<string>('REDIS_URL');
   if (redisUrl) {
     try {
-      logger.log('Attempting to initialize Redis Socket.IO adapter...');
-      const pubClient = createClient({ 
-        url: redisUrl,
-        socket: {
-          connectTimeout: 10000,
-          keepAlive: true,
-        }
-      });
-      
-      const subClient = pubClient.duplicate();
-      
-      // Don't await forever, if it fails, fallback to local adapter for stability
-      await Promise.race([
-        Promise.all([pubClient.connect(), subClient.connect()]),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 15000))
-      ]);
-      
-      app.useWebSocketAdapter({
-        create(port: number, options?: any) {
-          const adapter = createAdapter(pubClient, subClient);
-          return (app as any).getWebSocketAdapter().create(port, { ...options, adapter });
-        }
-      } as any);
-      
+      const redisIoAdapter = new RedisIoAdapter(app, redisUrl);
+      await redisIoAdapter.connectToRedis();
+      app.useWebSocketAdapter(redisIoAdapter);
       logger.log('✅ Redis Socket.IO adapter initialized successfully');
     } catch (error) {
-      logger.error(`❌ Failed to initialize Redis adapter: ${error.message}. Falling back to local adapter.`);
+      logger.error(`❌ Failed to initialize Redis adapter: ${error.message}. Falling back to default adapter.`);
     }
   }
 
