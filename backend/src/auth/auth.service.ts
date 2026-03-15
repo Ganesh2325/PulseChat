@@ -36,7 +36,7 @@ export class AuthService {
     const existingUsername = await this.prisma.user.findUnique({ where: { username: dto.username } });
     if (existingUsername) throw new ConflictException('Username already taken');
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
 
     const user = await this.prisma.user.create({
       data: {
