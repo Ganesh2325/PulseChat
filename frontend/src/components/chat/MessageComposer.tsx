@@ -15,7 +15,6 @@ interface MessageComposerProps {
 
 export function MessageComposer({ targetId, targetType, targetName }: MessageComposerProps) {
   const [content, setContent] = useState('');
-  const [content, setContent] = useState('');
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = useCallback(() => {
