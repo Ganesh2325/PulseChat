@@ -9,12 +9,19 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check locally first for ultra-fast landing
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    if (!token) {
+      router.replace('/signup');
+      return;
+    }
+    
     checkAuth();
-  }, [checkAuth]);
+  }, [checkAuth, router]);
 
   useEffect(() => {
-    if (!isLoading) {
-      router.replace(isAuthenticated ? '/chat' : '/signup');
+    if (!isLoading && isAuthenticated) {
+      router.replace('/chat');
     }
   }, [isAuthenticated, isLoading, router]);
 
