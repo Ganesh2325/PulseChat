@@ -54,7 +54,7 @@ async function bootstrap() {
         url: redisUrl,
         socket: {
           connectTimeout: 10000,
-          keepAlive: 5000,
+          keepAlive: true,
         }
       });
       
