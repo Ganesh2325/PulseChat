@@ -91,42 +91,6 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
             ),
           )}
 
-          {/* Media files */}
-          {message.mediaFiles && message.mediaFiles.length > 0 && (
-            <div className="mt-2 space-y-2">
-              {message.mediaFiles.map((file: any) => (
-                <div key={file.id}>
-                  {file.mimeType?.startsWith('image/') ? (
-                    <img
-                      src={file.url.startsWith('http') ? file.url : `${process.env.NEXT_PUBLIC_API_URL || 'https://pulsechat-backend.onrender.com'}${file.url}`}
-                      alt={file.originalName}
-                      className="max-w-full rounded-lg max-h-80 object-contain my-1 border border-black/5 shadow-sm"
-                      onLoad={() => {
-                        // Optional: trigger scroll to bottom when image loads
-                      }}
-                    />
-                  ) : file.mimeType?.startsWith('video/') ? (
-                    <video
-                      src={`${process.env.NEXT_PUBLIC_API_URL}${file.url}`}
-                      controls
-                      className="max-w-full rounded-lg max-h-64"
-                    />
-                  ) : (
-                    <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL}${file.url}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2 rounded-lg text-xs hover:opacity-80 transition-opacity"
-                      style={{ background: 'var(--bg-hover)' }}
-                    >
-                      📎 {file.originalName} ({(file.size / 1024).toFixed(1)} KB)
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-
           {/* Status indicator for own messages */}
           {isOwn && !showAvatar && (
             <span className="inline-flex ml-1.5 text-[10px] text-[var(--text-muted)]">
