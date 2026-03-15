@@ -117,10 +117,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message:send')
   async handleMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { content: string; roomId?: string; conversationId?: string; type?: string },
+    @MessageBody() data: { content: string; roomId?: string; conversationId?: string; type?: string; mediaIds?: string[] },
   ) {
     const userId = client.data.user.sub;
-    this.logger.debug(`Message from ${client.data.user.username}: content len=${data.content?.length}, room=${data.roomId}, conv=${data.conversationId}`);
+    this.logger.debug(`Message from ${client.data.user.username}: content len=${data.content?.length}, media=${data.mediaIds?.length}, room=${data.roomId}, conv=${data.conversationId}`);
 
 
     const allowed = await this.redis.checkRateLimit(`msg:${userId}`, 30, 60);
@@ -143,6 +143,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       roomId: data.roomId,
       conversationId: data.conversationId,
       type: (data.type as any) || 'TEXT',
+      mediaIds: data.mediaIds,
     });
 
     if (data.roomId) {

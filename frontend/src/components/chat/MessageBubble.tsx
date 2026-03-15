@@ -98,9 +98,12 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
                 <div key={file.id}>
                   {file.mimeType?.startsWith('image/') ? (
                     <img
-                      src={`${process.env.NEXT_PUBLIC_API_URL}${file.url}`}
+                      src={file.url.startsWith('http') ? file.url : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${file.url}`}
                       alt={file.originalName}
-                      className="max-w-full rounded-lg max-h-64 object-cover"
+                      className="max-w-full rounded-lg max-h-80 object-contain my-1 border border-black/5 shadow-sm"
+                      onLoad={() => {
+                        // Optional: trigger scroll to bottom when image loads
+                      }}
                     />
                   ) : file.mimeType?.startsWith('video/') ? (
                     <video

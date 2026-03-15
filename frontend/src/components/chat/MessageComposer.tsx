@@ -16,6 +16,7 @@ interface MessageComposerProps {
 export function MessageComposer({ targetId, targetType, targetName }: MessageComposerProps) {
   const [content, setContent] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -72,6 +73,15 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Strict 2MB Limit check
+    if (file.size > 2 * 1024 * 1024) {
+      setUploadError('Image is more than 2MB');
+      setTimeout(() => setUploadError(null), 4000);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setUploadError(null);
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -85,9 +95,11 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
         content: `📎 ${file.name}`,
         [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
         type: file.type.startsWith('image/') ? 'IMAGE' : file.type.startsWith('video/') ? 'VIDEO' : 'FILE',
+        mediaIds: [media.id],
       });
     } catch (error) {
       console.error('Upload failed:', error);
+      setUploadError('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -122,7 +134,13 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           accept="image/*,video/*,.pdf,.txt"
         />
 
-        {/* Text input */}
+        {/* Status messages / Errors */}
+        {uploadError && (
+          <div className="absolute -top-10 left-6 text-red-500 text-xs font-bold bg-white px-3 py-1.5 rounded-full border border-red-100 shadow-sm animate-pop-in">
+            ⚠️ {uploadError}
+          </div>
+        )}
+
         <textarea
           id="message-input"
           value={content}

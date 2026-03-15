@@ -11,7 +11,7 @@ export class MediaController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', {
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
     fileFilter: (_req, file, cb) => {
       const allowedMimes = [
         'image/jpeg', 'image/png', 'image/gif', 'image/webp',

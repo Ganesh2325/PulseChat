@@ -14,6 +14,7 @@ export class MessagesService {
     roomId?: string;
     conversationId?: string;
     type?: MessageType;
+    mediaIds?: string[];
     metadata?: any;
   }) {
     const message = await this.prisma.message.create({
@@ -24,6 +25,9 @@ export class MessagesService {
         conversationId: data.conversationId,
         type: data.type || 'TEXT',
         metadata: data.metadata,
+        mediaFiles: data.mediaIds ? {
+          connect: data.mediaIds.map(id => ({ id }))
+        } : undefined,
       },
       include: {
         sender: { select: { id: true, username: true, avatar: true } },
