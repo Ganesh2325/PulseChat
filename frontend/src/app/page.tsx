@@ -14,7 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isLoading) {
-      router.replace(isAuthenticated ? '/chat' : '/login');
+      router.replace(isAuthenticated ? '/chat' : '/signup');
     }
   }, [isAuthenticated, isLoading, router]);
 

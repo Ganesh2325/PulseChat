@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/authStore';
+import api from '@/lib/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,11 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { signup } = useAuthStore();
   const router = useRouter();
+
+  // Warm up the backend as soon as the user arrives
+  useEffect(() => {
+    api.get('/health').catch(() => {});
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
