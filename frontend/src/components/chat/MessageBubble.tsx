@@ -69,11 +69,13 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
   const handleEdit = () => {
     // We will trigger a global edit state that MessageComposer can listen to
     window.dispatchEvent(new CustomEvent('message:edit:trigger', { detail: message }));
+    setShowMenu(false);
   };
 
   const handlePin = () => {
     const socket = getSocket();
     socket?.emit('message:pin:toggle', { messageId: message.id });
+    setShowMenu(false);
   };
 
   if (message.isDeleted) {
@@ -90,8 +92,6 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
   return (
     <div 
       className={`flex gap-2.5 animate-pop-in transition-transform duration-200 hover:-translate-y-0.5 group ${showAvatar ? 'mt-3' : 'mt-0.5'} ${isOwn ? 'flex-row-reverse' : ''}`}
-      onMouseEnter={() => setShowMenu(true)}
-      onMouseLeave={() => setShowMenu(false)}
     >
       {/* Avatar */}
       <div className="w-10 shrink-0 text-center">
@@ -150,7 +150,8 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
         )}
 
         <div
-          className="px-4 py-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 group-hover:shadow-md relative"
+          onDoubleClick={() => setShowMenu(!showMenu)}
+          className="px-4 py-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 group-hover:shadow-md relative cursor-pointer select-none"
           style={{
             background: isOwn ? 'var(--message-own)' : 'var(--message-other)',
             borderTopLeftRadius: !isOwn && showAvatar ? '4px' : undefined,
