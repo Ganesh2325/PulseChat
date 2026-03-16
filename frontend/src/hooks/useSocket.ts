@@ -49,7 +49,22 @@ export function useSocketEvents() {
       useChatStore.getState().fetchConversations();
     };
 
+    const handleMessageUpdate = (updatedMessage: any) => {
+      useChatStore.getState().updateMessage(updatedMessage.id, updatedMessage);
+    };
+
+    const handleMessageDelete = (data: { messageId: string; content: string; isDeleted: boolean }) => {
+      useChatStore.getState().updateMessage(data.messageId, { content: data.content, isDeleted: data.isDeleted });
+    };
+
+    const handleReactionUpdate = (data: { messageId: string; reactions: any[] }) => {
+      useChatStore.getState().updateReactions(data.messageId, data.reactions);
+    };
+
     socket.on('message:new', handleNewMessage);
+    socket.on('message:updated', handleMessageUpdate);
+    socket.on('message:deleted', handleMessageDelete);
+    socket.on('message:reaction:update', handleReactionUpdate);
     socket.on('presence:update', handlePresence);
     socket.on('typing:update', handleTyping);
     socket.on('notification:new', handleNotification);
@@ -57,6 +72,9 @@ export function useSocketEvents() {
 
     return () => {
       socket.off('message:new', handleNewMessage);
+      socket.off('message:updated', handleMessageUpdate);
+      socket.off('message:deleted', handleMessageDelete);
+      socket.off('message:reaction:update', handleReactionUpdate);
       socket.off('presence:update', handlePresence);
       socket.off('typing:update', handleTyping);
       socket.off('notification:new', handleNotification);

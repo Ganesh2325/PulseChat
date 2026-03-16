@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { getSocket } from '@/lib/socket';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -15,6 +15,7 @@ interface MessageComposerProps {
 
 export function MessageComposer({ targetId, targetType, targetName }: MessageComposerProps) {
   const [content, setContent] = useState('');
+  const [editingMessage, setEditingMessage] = useState<any>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleSend = useCallback(() => {
@@ -23,29 +24,37 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     const socket = getSocket();
     if (!socket) return;
 
-    const currentUserId = useAuthStore.getState().user?.id;
-    const currentUser = useAuthStore.getState().user;
+    if (editingMessage) {
+      socket.emit('message:edit', {
+        messageId: editingMessage.id,
+        content: content.trim(),
+      });
+      setEditingMessage(null);
+    } else {
+      const currentUserId = useAuthStore.getState().user?.id;
+      const currentUser = useAuthStore.getState().user;
 
-    // Add optimistic message
-    useChatStore.getState().addOptimisticMessage({
-      content: content.trim(),
-      senderId: currentUserId || '',
-      sender: {
-        id: currentUserId || '',
-        username: currentUser?.username || 'You',
-        avatar: currentUser?.avatar || null
-      },
-      [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
-    });
+      // Add optimistic message
+      useChatStore.getState().addOptimisticMessage({
+        content: content.trim(),
+        senderId: currentUserId || '',
+        sender: {
+          id: currentUserId || '',
+          username: currentUser?.username || 'You',
+          avatar: currentUser?.avatar || null
+        },
+        [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
+      });
 
-    socket.emit('message:send', {
-      content: content.trim(),
-      [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
-    });
+      socket.emit('message:send', {
+        content: content.trim(),
+        [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
+      });
+    }
 
     setContent('');
     socket.emit('typing:stop', { targetId, targetType });
-  }, [content, targetId, targetType]);
+  }, [content, targetId, targetType, editingMessage]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -66,8 +75,43 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     }, 3000);
   };
 
+  useEffect(() => {
+    const handleEditTrigger = (e: any) => {
+      const message = e.detail;
+      setEditingMessage(message);
+      setContent(message.content);
+      // Focus the input
+      document.getElementById('message-input')?.focus();
+    };
+
+    window.addEventListener('message:edit:trigger', handleEditTrigger);
+    return () => window.removeEventListener('message:edit:trigger', handleEditTrigger);
+  }, []);
+
   return (
     <div className="px-6 py-5 shrink-0 bg-white border-t border-slate-200 shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.05)] z-20">
+      {editingMessage && (
+        <div className="mb-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between animate-pop-in">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-indigo-900">Editing Message</p>
+              <p className="text-[11px] text-indigo-600 truncate max-w-[400px]">Original: {editingMessage.content}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => {
+              setEditingMessage(null);
+              setContent('');
+            }}
+            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-600 transition-colors uppercase tracking-wider"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       <div className="flex items-end gap-3 rounded-[28px] p-3 bg-slate-50 border border-slate-200 focus-within:bg-white focus-within:border-[#1a73e8] focus-within:ring-4 focus-within:ring-[#1a73e8]/15 focus-within:shadow-lg transition-all duration-300">
         <textarea
           id="message-input"

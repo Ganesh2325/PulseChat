@@ -211,6 +211,80 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
+  @SubscribeMessage('message:edit')
+  async handleMessageEdit(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; content: string },
+  ) {
+    const userId = client.data.user.sub;
+    const updatedMessage = await this.messagesService.editMessage(data.messageId, userId, data.content);
+
+    const target = updatedMessage.roomId ? `room:${updatedMessage.roomId}` : `conversation:${updatedMessage.conversationId}`;
+    this.server.to(target).emit('message:updated', updatedMessage);
+  }
+
+  @SubscribeMessage('message:delete')
+  async handleMessageDelete(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    const userId = client.data.user.sub;
+    const deletedMessage = await this.messagesService.deleteMessageForEveryone(data.messageId, userId);
+
+    const target = deletedMessage.roomId ? `room:${deletedMessage.roomId}` : `conversation:${deletedMessage.conversationId}`;
+    this.server.to(target).emit('message:deleted', { 
+      messageId: deletedMessage.id,
+      content: deletedMessage.content,
+      isDeleted: true 
+    });
+  }
+
+  @SubscribeMessage('message:react')
+  async handleMessageReact(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; emoji: string },
+  ) {
+    const userId = client.data.user.sub;
+    await this.messagesService.addReaction(data.messageId, userId, data.emoji);
+
+    const message = await this.messagesService.findById(data.messageId);
+    const target = message.roomId ? `room:${message.roomId}` : `conversation:${message.conversationId}`;
+    
+    this.server.to(target).emit('message:reaction:update', {
+      messageId: data.messageId,
+      reactions: message.reactions,
+    });
+  }
+
+  @SubscribeMessage('message:unreact')
+  async handleMessageUnreact(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string; emoji: string },
+  ) {
+    const userId = client.data.user.sub;
+    await this.messagesService.removeReaction(data.messageId, userId, data.emoji);
+
+    const message = await this.messagesService.findById(data.messageId);
+    const target = message.roomId ? `room:${message.roomId}` : `conversation:${message.conversationId}`;
+    
+    this.server.to(target).emit('message:reaction:update', {
+      messageId: data.messageId,
+      reactions: message.reactions,
+    });
+  }
+
+  @SubscribeMessage('message:pin:toggle')
+  async handleMessagePin(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    const userId = client.data.user.sub;
+    const updatedMessage = await this.messagesService.togglePin(data.messageId, userId);
+
+    const target = updatedMessage.roomId ? `room:${updatedMessage.roomId}` : `conversation:${updatedMessage.conversationId}`;
+    this.server.to(target).emit('message:updated', updatedMessage);
+  }
+
   @SubscribeMessage('conversation:join')
   async handleConversationJoin(
     @ConnectedSocket() client: AuthenticatedSocket,

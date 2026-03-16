@@ -67,6 +67,9 @@ model User {
   createdRooms            Room[]          @relation("RoomCreator")
   mediaFiles              MediaFile[]
   notifications           Notification[]
+  reactions               Reaction[]
+  pinnedMessages          Message[]       @relation("PinnedBy")
+  messageDeletions        MessageDeletion[]
 
   @@index([email])
   @@index([username])
@@ -117,6 +120,23 @@ model Message {
   conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   room         Room?         @relation(fields: [roomId], references: [id], onDelete: Cascade)
   mediaFiles   MediaFile[]
+  reactions    Reaction[]
+  deletions    MessageDeletion[]
+
+  // Advanced Lifecycle
+  isDeleted    Boolean       @default(false)
+  deletedAt    DateTime?
+  isEdited     Boolean       @default(false)
+  editHistory  Json?         // Array<{ content: string, editedAt: string }>
+  isPinned     Boolean       @default(false)
+  pinnedAt     DateTime?
+  pinnedById   String?
+  parentMessageId String?
+  forwarded    Boolean       @default(false)
+
+  pinnedBy     User?         @relation("PinnedBy", fields: [pinnedById], references: [id], onDelete: SetNull)
+  parentMessage Message?     @relation("Replies", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  replies       Message[]    @relation("Replies")
 
   @@index([senderId])
   @@index([conversationId])
@@ -171,6 +191,33 @@ model MediaFile {
   message    Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@index([uploadedById])
+  @@index([messageId])
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+  @@index([messageId])
+}
+
+model MessageDeletion {
+  id        String   @id @default(uuid())
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId])
   @@index([messageId])
 }
 

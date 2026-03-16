@@ -13,6 +13,15 @@ interface Message {
   mediaFiles?: any[];
   createdAt: string;
   isOptimistic?: boolean;
+
+  // Advanced Lifecycle
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  isPinned?: boolean;
+  isForwarded?: boolean;
+  reactions?: Array<{ id: string; emoji: string; userId: string; user: { username: string } }>;
+  parentMessageId?: string | null;
+  parentMessage?: Message | null;
 }
 
 interface Room {
@@ -51,6 +60,8 @@ interface ChatState {
   createConversation: (participantId: string) => Promise<Conversation>;
   deleteConversation: (conversationId: string) => Promise<void>;
   addOptimisticMessage: (message: Partial<Message>) => string;
+  updateMessage: (messageId: string, updates: Partial<Message>) => void;
+  updateReactions: (messageId: string, reactions: any[]) => void;
   clearMessages: () => void;
 }
 
@@ -148,8 +159,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   addMessage: (message) => {
     set((state) => {
-      // 1. Check if this real message should replace an optimistic one
-      // We look for a message with the same content and sender sent in the last 5 seconds
       const optimisticMatch = state.messages.find(m => 
         m.isOptimistic && 
         m.content === message.content && 
@@ -167,10 +176,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
         
         if (isRelevant && !exists) {
           nextMessages = [...state.messages, message];
+        } else if (exists) {
+          // Update existing message (useful for background sync)
+          nextMessages = state.messages.map(m => m.id === message.id ? { ...m, ...message } : m);
         }
       }
 
-      // 2. Update conversations list
       let nextConversations = state.conversations;
       if (message.conversationId) {
         nextConversations = state.conversations.map(conv => 
@@ -185,6 +196,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         conversations: nextConversations
       };
     });
+  },
+
+  updateMessage: (messageId, updates) => {
+    set((state) => ({
+      messages: state.messages.map(m => m.id === messageId ? { ...m, ...updates } : m),
+      // Also update last message in conversations if applicable
+      conversations: state.conversations.map(conv => 
+        conv.lastMessage?.id === messageId 
+          ? { ...conv, lastMessage: { ...conv.lastMessage, ...updates } as Message }
+          : conv
+      )
+    }));
+  },
+
+  updateReactions: (messageId, reactions) => {
+    set((state) => ({
+      messages: state.messages.map(m => m.id === messageId ? { ...m, reactions } : m)
+    }));
   },
 
   joinRoom: async (roomId) => {
