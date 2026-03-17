@@ -108,13 +108,8 @@ export class MessagesService {
       throw new Error('Not authorized to delete this message');
     }
 
-    return this.prisma.message.update({
+    return this.prisma.message.delete({
       where: { id },
-      data: {
-        content: 'This message was deleted.',
-        isDeleted: true,
-        deletedAt: new Date(),
-      },
     });
   }
 

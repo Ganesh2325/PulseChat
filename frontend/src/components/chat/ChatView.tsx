@@ -105,6 +105,41 @@ export function ChatView() {
 
       {showSearch && <SearchOverlay onClose={() => setShowSearch(false)} />}
 
+      {/* Pinned Messages Header */}
+      {messages.some(m => m.isPinned) && (
+        <div className="bg-amber-50/50 backdrop-blur-sm border-b border-amber-100 flex items-center gap-3 px-6 py-2 shrink-0 animate-slide-down">
+          <div className="p-1.5 bg-amber-100 rounded-lg text-amber-600">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" />
+            </svg>
+          </div>
+          <div className="flex-1 min-w-0 flex items-center gap-4 overflow-x-auto no-scrollbar scroll-smooth">
+            {messages.filter(m => m.isPinned).map(msg => (
+              <button
+                key={msg.id}
+                onClick={() => {
+                  const element = document.getElementById(`message-${msg.id}`);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.classList.add('highlight-flash');
+                    setTimeout(() => element.classList.remove('highlight-flash'), 2000);
+                  }
+                }}
+                className="shrink-0 flex items-center gap-2 max-w-[200px] group transition-all"
+              >
+                <span className="text-[12px] font-extrabold text-amber-700 truncate group-hover:underline">
+                  {msg.sender.username}: <span className="font-medium text-amber-600/80">{msg.content}</span>
+                </span>
+                <span className="text-[10px] text-amber-500 font-bold opacity-60">·</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] font-bold text-amber-500 uppercase tracking-widest shrink-0 ml-auto mr-1">
+            Pinned ({messages.filter(m => m.isPinned).length})
+          </p>
+        </div>
+      )}
+
       {/* Messages */}
       <div
         ref={containerRef}

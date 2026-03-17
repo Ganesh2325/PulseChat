@@ -1,6 +1,4 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -40,8 +38,21 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
   const { user } = useAuthStore();
   const { createConversation, setCurrentConversation, fetchConversationMessages, setReplyingTo, setForwardingMessage } = useChatStore();
   const [showMenu, setShowMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const handleUserClick = async () => {
+  useEffect(() => {
+    setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
+
+  useEffect(() => {
+    if (!showMenu) return;
+    const handleClickAway = () => setShowMenu(false);
+    window.addEventListener('click', handleClickAway);
+    return () => window.removeEventListener('click', handleClickAway);
+  }, [showMenu]);
+
+  const handleUserClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isOwn) return;
     try {
       const conversation = await createConversation(message.sender.id);
@@ -62,7 +73,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
   };
 
   const handleDelete = () => {
-    if (window.confirm('Delete this message for everyone?')) {
+    if (window.confirm('Delete this message for everyone permanently? This cannot be undone.')) {
       const socket = getSocket();
       socket?.emit('message:delete', { messageId: message.id });
     }
@@ -128,9 +139,12 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
 
       {/* Content */}
       <div className={`relative max-w-[70%] min-w-0 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
-        {/* Action Menu (Desktop Hover) */}
-        {showMenu && !message.isDeleted && (
-          <div className={`absolute -top-10 flex bg-white/95 backdrop-blur shadow-2xl border border-slate-100 rounded-full px-3 py-1.5 gap-2 z-30 transition-all animate-pop-in ${isOwn ? 'right-0' : 'left-0'}`}>
+        {/* Action Menu (Desktop Hover / Mobile Double Click) */}
+        {showMenu && (
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`absolute -top-12 flex bg-white/95 backdrop-blur shadow-2xl border border-slate-100 rounded-full px-3 py-1.5 gap-2 z-30 transition-all animate-pop-in ${isOwn ? 'right-0' : 'left-0'}`}
+          >
             <button onClick={() => handleReact('👍')} className="hover:scale-125 transition-transform">👍</button>
             <button onClick={() => handleReact('❤️')} className="hover:scale-125 transition-transform">❤️</button>
             <button onClick={() => handleReact('😂')} className="hover:scale-125 transition-transform">😂</button>
@@ -149,7 +163,9 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             </button>
 
             <button onClick={handlePin} className={`p-1.5 hover:bg-slate-100 rounded-lg ${message.isPinned ? 'text-amber-500' : 'text-slate-500'}`} title="Pin">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
             </button>
 
             <button onClick={handleDelete} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg" title="Delete">
@@ -170,13 +186,27 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             </button>
             <span className="text-[11px] font-medium text-[var(--text-muted)]">{time}</span>
             {message.isPinned && (
-              <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded-full font-bold border border-amber-100">📌 Pinned</span>
+              <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold border border-amber-100 animate-pulse">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" /></svg>
+                Pinned
+              </span>
             )}
           </div>
         )}
 
         <div
-          onDoubleClick={() => setShowMenu(!showMenu)}
+          onClick={(e) => {
+            if (!isMobile) {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }
+          }}
+          onDoubleClick={(e) => {
+            if (isMobile) {
+              e.stopPropagation();
+              setShowMenu(!showMenu);
+            }
+          }}
           className="px-4 py-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 group-hover:shadow-md relative cursor-pointer select-none"
           style={{
             background: isOwn ? 'var(--message-own)' : 'var(--message-other)',
@@ -184,6 +214,15 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             borderTopRightRadius: isOwn && showAvatar ? '4px' : undefined,
           }}
         >
+          {/* Dropdown Indicator (Desktop) */}
+          {!isMobile && (
+            <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          )}
+
           {/* Forwarded label */}
           {message.isForwarded && (
             <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] italic mb-1 opacity-80 border-b border-black/5 pb-1">
@@ -241,15 +280,15 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             {Array.from(new Set(message.reactions.map(r => r.emoji))).map(emoji => (
               <button
                 key={emoji}
-                onClick={() => handleReact(emoji)}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border transition-all ${
+                onClick={(e) => { e.stopPropagation(); handleReact(emoji); }}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border shadow-sm transition-all hover:scale-105 active:scale-95 ${
                   message.reactions?.some(r => r.emoji === emoji && r.userId === user?.id)
                     ? 'bg-indigo-50 border-indigo-200 text-indigo-600'
                     : 'bg-white border-slate-100 text-slate-500 hover:border-slate-300'
                 }`}
               >
                 <span>{emoji}</span>
-                <span>{message.reactions?.filter(r => r.emoji === emoji).length}</span>
+                <span className="opacity-80">{message.reactions?.filter(r => r.emoji === emoji).length}</span>
               </button>
             ))}
           </div>
