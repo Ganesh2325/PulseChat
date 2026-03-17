@@ -242,11 +242,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const deletedMessage = await this.messagesService.deleteMessageForEveryone(data.messageId, userId);
 
     const target = deletedMessage.roomId ? `room:${deletedMessage.roomId}` : `conversation:${deletedMessage.conversationId}`;
-    this.server.to(target).emit('message:deleted', { 
-      messageId: deletedMessage.id,
-      content: deletedMessage.content,
-      isDeleted: true 
-    });
+    this.server.to(target).emit('message:updated', deletedMessage);
+  }
+
+  @SubscribeMessage('message:delete:me')
+  async handleMessageDeleteMe(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { messageId: string },
+  ) {
+    const userId = client.data.user.sub;
+    await this.messagesService.deleteMessageForMe(data.messageId, userId);
+    client.emit('message:deleted:me', { messageId: data.messageId });
   }
 
   @SubscribeMessage('message:react')

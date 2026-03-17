@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { getSocket } from '@/lib/socket';
+import { DeleteMessageModal } from './DeleteMessageModal';
 
 interface Message {
   id: string;
@@ -38,6 +39,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
   const { user } = useAuthStore();
   const { createConversation, setCurrentConversation, fetchConversationMessages, setReplyingTo, setForwardingMessage } = useChatStore();
   const [showMenu, setShowMenu] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -72,27 +74,25 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
     setShowMenu(false);
   };
 
-  const handleDelete = () => {
-    if (isOwn) {
-      const choice = window.confirm('Delete for everyone? (OK) or Delete for me? (Cancel)');
-      if (choice) {
-        const socket = getSocket();
-        socket?.emit('message:delete', { messageId: message.id });
-      } else {
-        handleHide();
-      }
-    } else {
-      if (window.confirm('Delete this message for me?')) {
-        handleHide();
-      }
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
     setShowMenu(false);
   };
 
-  const handleHide = () => {
+  const onDeleteEveryone = () => {
+    const socket = getSocket();
+    socket?.emit('message:delete', { messageId: message.id });
+    setShowDeleteModal(false);
+  };
+
+  const onDeleteMe = () => {
     const socket = getSocket();
     socket?.emit('message:delete:me', { messageId: message.id });
-    // Optimistically update local state if needed, but the store should handle the event
+    setShowDeleteModal(false);
+  };
+
+  const onCancelDelete = () => {
+    setShowDeleteModal(false);
   };
 
   const handleEdit = () => {
@@ -179,7 +179,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
               </svg>
             </button>
 
-            <button onClick={handleDelete} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg" title="Delete">
+            <button onClick={handleDeleteClick} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg" title="Delete">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
@@ -316,6 +316,14 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
           </div>
         )}
       </div>
+
+      <DeleteMessageModal 
+        isOpen={showDeleteModal}
+        canDeleteForEveryone={isOwn}
+        onDeleteEveryone={onDeleteEveryone}
+        onDeleteMe={onDeleteMe}
+        onCancel={onCancelDelete}
+      />
     </div>
   );
 }

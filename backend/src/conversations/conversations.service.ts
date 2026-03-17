@@ -109,12 +109,23 @@ export class ConversationsService {
     return conversation;
   }
 
-  async getMessages(conversationId: string, cursor?: string, limit: number = 50) {
+  async getMessages(userId: string, conversationId: string, cursor?: string, limit: number = 50) {
     const messages = await this.prisma.message.findMany({
-      where: { conversationId },
+      where: { 
+        conversationId,
+        deletions: {
+          none: { userId }
+        }
+      },
       include: {
         sender: { select: { id: true, username: true, avatar: true } },
         mediaFiles: true,
+        parentMessage: {
+          include: { sender: { select: { id: true, username: true } } }
+        },
+        reactions: {
+          include: { user: { select: { id: true, username: true } } }
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,

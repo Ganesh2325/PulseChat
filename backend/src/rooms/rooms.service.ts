@@ -103,12 +103,23 @@ export class RoomsService implements OnModuleInit {
     });
   }
 
-  async getMessages(roomId: string, cursor?: string, limit: number = 50) {
+  async getMessages(userId: string, roomId: string, cursor?: string, limit: number = 50) {
     const messages = await this.prisma.message.findMany({
-      where: { roomId },
+      where: { 
+        roomId,
+        deletions: {
+          none: { userId }
+        }
+      },
       include: {
         sender: { select: { id: true, username: true, avatar: true } },
         mediaFiles: true,
+        parentMessage: {
+          include: { sender: { select: { id: true, username: true } } }
+        },
+        reactions: {
+          include: { user: { select: { id: true, username: true } } }
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
