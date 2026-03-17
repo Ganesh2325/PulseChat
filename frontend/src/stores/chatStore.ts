@@ -69,6 +69,7 @@ interface ChatState {
   forwardingMessage: Message | null;
   setForwardingMessage: (message: Message | null) => void;
   clearMessages: () => void;
+  removeMessage: (messageId: string) => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -242,4 +243,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setForwardingMessage: (message) => set({ forwardingMessage: message }),
 
   clearMessages: () => set({ messages: [] }),
+  removeMessage: (messageId) => {
+    set((state) => ({
+      messages: state.messages.filter(m => m.id !== messageId),
+      conversations: state.conversations.map(conv => {
+        if (conv.lastMessage?.id === messageId) {
+          // If the last message is deleted for me, we might want to find the next one, 
+          // but for now just null it or keep it as is. 
+          // Usually, "delete for me" shouldn't necessarily hide the conversation's last message hint if it's still there for others,
+          // but since it's "for me", maybe it should.
+          return { ...conv, lastMessage: null }; 
+        }
+        return conv;
+      })
+    }));
+  },
 }));

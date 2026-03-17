@@ -28,11 +28,12 @@ export class ConversationsController {
 
   @Get(':id/messages')
   async getMessages(
+    @CurrentUser('sub') userId: string,
     @Param('id') conversationId: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: number,
   ) {
-    return this.conversationsService.getMessages(conversationId, cursor, limit || 50);
+    return this.conversationsService.getMessages(userId, conversationId, cursor, limit || 50);
   }
 
   @Post(':id/read')

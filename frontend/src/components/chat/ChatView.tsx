@@ -11,7 +11,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { SearchOverlay } from './SearchOverlay';
 
 export function ChatView() {
-  const { currentRoom, currentConversation, messages, isLoadingMessages } = useChatStore();
+  const { currentRoom, currentConversation, messages, isLoadingMessages, removeMessage } = useChatStore();
   const { user } = useAuthStore();
   const { typingUsers } = usePresenceStore();
   const [showSearch, setShowSearch] = useState(false);
@@ -38,6 +38,21 @@ export function ChatView() {
       socket.emit('mark:read', { [targetType === 'room' ? 'roomId' : 'conversationId']: targetId });
     }
   }, [targetId, targetType, messages.length]); // Mark read when thread changes or new messages arrive
+
+  // Message deletion (for me) listener
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleDeletedMe = ({ messageId }: { messageId: string }) => {
+      removeMessage(messageId);
+    };
+
+    socket.on('message:deleted:me', handleDeletedMe);
+    return () => {
+      socket.off('message:deleted:me', handleDeletedMe);
+    };
+  }, [removeMessage]);
 
   const handleScroll = () => {
     if (containerRef.current) {

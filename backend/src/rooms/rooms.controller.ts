@@ -43,10 +43,11 @@ export class RoomsController {
 
   @Get(':id/messages')
   async getMessages(
+    @CurrentUser('sub') userId: string,
     @Param('id') roomId: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: number,
   ) {
-    return this.roomsService.getMessages(roomId, cursor, limit || 50);
+    return this.roomsService.getMessages(userId, roomId, cursor, limit || 50);
   }
 }

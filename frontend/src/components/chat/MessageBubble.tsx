@@ -73,10 +73,26 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
   };
 
   const handleDelete = () => {
-    if (window.confirm('Delete this message for everyone permanently? This cannot be undone.')) {
-      const socket = getSocket();
-      socket?.emit('message:delete', { messageId: message.id });
+    if (isOwn) {
+      const choice = window.confirm('Delete for everyone? (OK) or Delete for me? (Cancel)');
+      if (choice) {
+        const socket = getSocket();
+        socket?.emit('message:delete', { messageId: message.id });
+      } else {
+        handleHide();
+      }
+    } else {
+      if (window.confirm('Delete this message for me?')) {
+        handleHide();
+      }
     }
+    setShowMenu(false);
+  };
+
+  const handleHide = () => {
+    const socket = getSocket();
+    socket?.emit('message:delete:me', { messageId: message.id });
+    // Optimistically update local state if needed, but the store should handle the event
   };
 
   const handleEdit = () => {
@@ -145,11 +161,6 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             onClick={(e) => e.stopPropagation()}
             className={`absolute -top-12 flex bg-white/95 backdrop-blur shadow-2xl border border-slate-100 rounded-full px-3 py-1.5 gap-2 z-30 transition-all animate-pop-in ${isOwn ? 'right-0' : 'left-0'}`}
           >
-            <button onClick={() => handleReact('👍')} className="hover:scale-125 transition-transform">👍</button>
-            <button onClick={() => handleReact('❤️')} className="hover:scale-125 transition-transform">❤️</button>
-            <button onClick={() => handleReact('😂')} className="hover:scale-125 transition-transform">😂</button>
-            <div className="w-px h-5 bg-slate-200 self-center mx-1" />
-            
             <button onClick={handleReply} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Reply">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10h10a8 8 0 018 8v2M3 10l5-5m-5 5l5 5" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
