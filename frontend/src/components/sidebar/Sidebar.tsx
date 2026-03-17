@@ -67,14 +67,38 @@ export function Sidebar({ onClose }: SidebarProps) {
   return (
     <div className="w-80 h-full flex flex-col border-r border-white/5 bg-[var(--bg-secondary)] shadow-2xl">
       {/* Header */}
-      <div className="p-5 border-b border-white/5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)]" style={{ background: 'linear-gradient(135deg, var(--accent), #7e22ce)' }}>
+      <div className="p-5 border-b border-white/5 flex items-center justify-between relative group">
+        <div className="flex items-center gap-3 select-none cursor-help" 
+             onDoubleClick={() => {
+               const diag = document.getElementById('diag-panel');
+               if (diag) diag.style.display = diag.style.display === 'none' ? 'block' : 'none';
+             }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] transform transition-transform group-hover:scale-110" style={{ background: 'linear-gradient(135deg, var(--accent), #7e22ce)' }}>
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
           <span className="font-black text-xl tracking-tight text-[var(--text-primary)]">PulseChat</span>
+        </div>
+        
+        <button 
+          onClick={() => { fetchRooms(); fetchConversations(); fetchUnreadCount(); }}
+          className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-white/5 rounded-lg transition-all"
+          title="Refresh"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+
+        {/* Hidden Diagnostic Panel */}
+        <div id="diag-panel" style={{ display: 'none' }} className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-3xl p-4 z-50 border-b border-white/10 text-[10px] font-mono animate-fade-in shadow-2xl">
+          <div className="text-[var(--accent)] font-bold mb-2 uppercase tracking-widest border-b border-white/5 pb-1">🔧 Diagnostics</div>
+          <div className="space-y-1 opacity-80">
+            <div>API: <span className="text-white">{process.env.NEXT_PUBLIC_API_URL || 'DEFAULT_4000'}</span></div>
+            <div>USER: <span className="text-white">{user?.id}</span></div>
+            <div>ROOMS: <span className="text-white">{rooms.length}</span></div>
+            <div>DMS: <span className="text-white">{conversations.length}</span></div>
+            <div>STATUS: <span className="text-green-400">CONNECTING...</span></div>
+          </div>
         </div>
       </div>
 
@@ -111,9 +135,10 @@ export function Sidebar({ onClose }: SidebarProps) {
             Direct Messages
           </h3>
           <div className="space-y-1">
-            {conversations
-              .filter(conv => conv.lastMessage !== null || currentConversation?.id === conv.id)
-              .map((conv) => {
+            {conversations.length === 0 ? (
+              <p className="text-[11px] text-[var(--text-muted)] px-3 py-2 italic font-medium opacity-60">No conversations yet.</p>
+            ) : (
+              conversations.map((conv) => {
                 const other = conv.participants.find((p) => p.id !== user?.id);
                 const isActive = currentConversation?.id === conv.id;
                 return (
@@ -153,9 +178,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                     </button>
                   </div>
                 );
-              })}
-            {conversations.filter(conv => conv.lastMessage !== null || currentConversation?.id === conv.id).length === 0 && (
-              <p className="text-xs text-[var(--text-muted)] px-3 py-2 italic font-medium">Start a chat from the active users list!</p>
+              })
             )}
           </div>
         </div>
