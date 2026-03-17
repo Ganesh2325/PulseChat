@@ -16,6 +16,8 @@ export class MessagesService {
     type?: MessageType;
     mediaIds?: string[];
     metadata?: any;
+    parentMessageId?: string;
+    forwarded?: boolean;
   }) {
     const message = await this.prisma.message.create({
       data: {
@@ -25,6 +27,8 @@ export class MessagesService {
         conversationId: data.conversationId,
         type: data.type || 'TEXT',
         metadata: data.metadata,
+        parentMessageId: data.parentMessageId,
+        forwarded: data.forwarded || false,
         mediaFiles: data.mediaIds ? {
           connect: data.mediaIds.map(id => ({ id }))
         } : undefined,
@@ -32,6 +36,9 @@ export class MessagesService {
       include: {
         sender: { select: { id: true, username: true, avatar: true } },
         mediaFiles: true,
+        parentMessage: {
+          include: { sender: { select: { id: true, username: true } } }
+        },
       },
     });
 

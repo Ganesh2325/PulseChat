@@ -31,12 +31,14 @@ interface MessageBubbleProps {
   message: Message;
   isOwn: boolean;
   showAvatar: boolean;
+  isGrouped?: boolean;
+  isLastInGroup?: boolean;
 }
 
-export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps) {
+export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInGroup }: MessageBubbleProps) {
   const time = format(new Date(message.createdAt), 'HH:mm');
   const { user } = useAuthStore();
-  const { createConversation, setCurrentConversation, fetchConversationMessages } = useChatStore();
+  const { createConversation, setCurrentConversation, fetchConversationMessages, setReplyingTo, setForwardingMessage } = useChatStore();
   const [showMenu, setShowMenu] = useState(false);
 
   const handleUserClick = async () => {
@@ -72,6 +74,18 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
     setShowMenu(false);
   };
 
+  const handleReply = () => {
+    setReplyingTo(message);
+    setShowMenu(false);
+    // Focus composer
+    document.getElementById('message-input')?.focus();
+  };
+
+  const handleForward = () => {
+    setForwardingMessage(message);
+    setShowMenu(false);
+  };
+
   const handlePin = () => {
     const socket = getSocket();
     socket?.emit('message:pin:toggle', { messageId: message.id });
@@ -80,8 +94,8 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
 
   if (message.isDeleted) {
     return (
-      <div className={`flex gap-2.5 ${showAvatar ? 'mt-3' : 'mt-0.5'} ${isOwn ? 'flex-row-reverse' : ''} opacity-60`}>
-        <div className="w-10 shrink-0" />
+      <div className={`flex gap-2.5 ${showAvatar ? 'mt-4' : 'mt-1'} ${isOwn ? 'flex-row-reverse' : ''} opacity-60`}>
+        {!isOwn && <div className="w-10 shrink-0" />}
         <div className={`max-w-[70%] px-4 py-2 rounded-2xl border border-slate-200 text-slate-400 italic text-sm ${isOwn ? 'bg-slate-50' : 'bg-white'}`}>
           This message was deleted
         </div>
@@ -91,7 +105,8 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
 
   return (
     <div 
-      className={`flex gap-2.5 animate-pop-in transition-transform duration-200 hover:-translate-y-0.5 group ${showAvatar ? 'mt-3' : 'mt-0.5'} ${isOwn ? 'flex-row-reverse' : ''}`}
+      id={`message-${message.id}`}
+      className={`flex gap-2.5 animate-pop-in transition-transform duration-200 hover:-translate-y-0.5 group ${showAvatar ? 'mt-4' : 'mt-1'} ${isOwn ? 'flex-row-reverse' : ''}`}
     >
       {/* Avatar */}
       <div className="w-10 shrink-0 text-center">
@@ -115,19 +130,30 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
       <div className={`relative max-w-[70%] min-w-0 flex flex-col ${isOwn ? 'items-end' : 'items-start'}`}>
         {/* Action Menu (Desktop Hover) */}
         {showMenu && !message.isDeleted && (
-          <div className={`absolute -top-8 flex bg-white/90 backdrop-blur shadow-lg border border-slate-100 rounded-full px-2 py-1 gap-1.5 z-30 transition-all animate-pop-in ${isOwn ? 'right-0' : 'left-0'}`}>
+          <div className={`absolute -top-10 flex bg-white/95 backdrop-blur shadow-2xl border border-slate-100 rounded-full px-3 py-1.5 gap-2 z-30 transition-all animate-pop-in ${isOwn ? 'right-0' : 'left-0'}`}>
             <button onClick={() => handleReact('👍')} className="hover:scale-125 transition-transform">👍</button>
             <button onClick={() => handleReact('❤️')} className="hover:scale-125 transition-transform">❤️</button>
             <button onClick={() => handleReact('😂')} className="hover:scale-125 transition-transform">😂</button>
-            <div className="w-px h-4 bg-slate-200 self-center mx-1" />
-            <button onClick={handleEdit} className="p-1 hover:bg-slate-100 rounded-md" title="Edit">
-              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <div className="w-px h-5 bg-slate-200 self-center mx-1" />
+            
+            <button onClick={handleReply} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Reply">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10h10a8 8 0 018 8v2M3 10l5-5m-5 5l5 5" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
-            <button onClick={handlePin} className={`p-1 hover:bg-slate-100 rounded-md ${message.isPinned ? 'text-amber-500' : 'text-slate-500'}`} title="Pin">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+
+            <button onClick={handleEdit} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Edit">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
-            <button onClick={handleDelete} className="p-1 hover:bg-red-50 text-red-400 rounded-md" title="Delete">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+
+            <button onClick={handleForward} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Forward">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+
+            <button onClick={handlePin} className={`p-1.5 hover:bg-slate-100 rounded-lg ${message.isPinned ? 'text-amber-500' : 'text-slate-500'}`} title="Pin">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+
+            <button onClick={handleDelete} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg" title="Delete">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
           </div>
         )}
@@ -158,6 +184,37 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
             borderTopRightRadius: isOwn && showAvatar ? '4px' : undefined,
           }}
         >
+          {/* Forwarded label */}
+          {message.isForwarded && (
+            <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] italic mb-1 opacity-80 border-b border-black/5 pb-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Forwarded
+            </div>
+          )}
+
+          {/* Reply Preview */}
+          {message.parentMessage && (
+            <div 
+              onClick={(e) => {
+                e.stopPropagation();
+                const element = document.getElementById(`message-${message.parentMessageId}`);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  element.classList.add('highlight-flash');
+                  setTimeout(() => element.classList.remove('highlight-flash'), 2000);
+                }
+              }}
+              className="mb-2 px-3 py-1.5 bg-black/5 border-l-4 border-[var(--accent)] rounded-r-lg text-[13px] opacity-90 cursor-alias select-none hover:bg-black/10 transition-colors"
+            >
+              <p className="font-extrabold text-[12px] mb-0.5" style={{ color: 'var(--accent)' }}>
+                {message.parentMessage.sender.username}
+              </p>
+              <p className="truncate text-slate-600 font-medium">
+                {message.parentMessage.content}
+              </p>
+            </div>
+          )}
+
           {message.content.split(/(@\w+)/g).map((part, i) =>
             part.startsWith('@') ? (
               <span key={i} className="font-semibold" style={{ color: 'var(--accent)' }}>{part}</span>
@@ -198,9 +255,14 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
           </div>
         )}
 
-        {isOwn && (
-          <div className="text-[10px] text-[var(--text-muted)] mt-0.5 min-h-[14px]">
-            {message.status === 'READ' ? '✓✓' : message.status === 'DELIVERED' ? '✓✓' : '✓'}
+        {isOwn && !isGrouped && (
+          <div className="flex justify-end mt-1 px-1">
+            <span 
+              className={`text-[11px] font-bold ${message.status === 'READ' ? 'text-blue-500' : 'text-slate-400'}`}
+              title={message.status}
+            >
+              {message.status === 'READ' || message.status === 'DELIVERED' ? '✓✓' : '✓'}
+            </span>
           </div>
         )}
       </div>

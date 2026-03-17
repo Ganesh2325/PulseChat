@@ -31,6 +31,7 @@ interface Room {
   isDefault: boolean;
   isSponsored: boolean;
   memberCount: number;
+  lastReadAt: string | null;
 }
 
 interface Conversation {
@@ -39,6 +40,7 @@ interface Conversation {
   participants: Array<{ id: string; username: string; avatar: string | null; lastReadAt?: string }>;
   lastMessage: Message | null;
   updatedAt: string;
+  lastReadAt?: string;
 }
 
 interface ChatState {
@@ -48,6 +50,7 @@ interface ChatState {
   currentConversation: Conversation | null;
   messages: Message[];
   isLoadingMessages: boolean;
+  replyingTo: Message | null;
 
   fetchRooms: () => Promise<void>;
   setCurrentRoom: (room: Room | null) => void;
@@ -62,6 +65,9 @@ interface ChatState {
   addOptimisticMessage: (message: Partial<Message>) => string;
   updateMessage: (messageId: string, updates: Partial<Message>) => void;
   updateReactions: (messageId: string, reactions: any[]) => void;
+  setReplyingTo: (message: Message | null) => void;
+  forwardingMessage: Message | null;
+  setForwardingMessage: (message: Message | null) => void;
   clearMessages: () => void;
 }
 
@@ -72,6 +78,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   currentConversation: null,
   messages: [],
   isLoadingMessages: false,
+  replyingTo: null,
+  forwardingMessage: null,
 
   fetchRooms: async () => {
     const { data } = await api.get('/rooms');
@@ -229,6 +237,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
     return data;
   },
+
+  setReplyingTo: (message) => set({ replyingTo: message }),
+  setForwardingMessage: (message) => set({ forwardingMessage: message }),
 
   clearMessages: () => set({ messages: [] }),
 }));

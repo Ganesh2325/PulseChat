@@ -24,6 +24,8 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     const socket = getSocket();
     if (!socket) return;
 
+    const { replyingTo, setReplyingTo } = useChatStore.getState();
+
     if (editingMessage) {
       socket.emit('message:edit', {
         messageId: editingMessage.id,
@@ -44,12 +46,17 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           avatar: currentUser?.avatar || null
         },
         [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
+        parentMessageId: replyingTo?.id,
+        parentMessage: replyingTo,
       });
 
       socket.emit('message:send', {
         content: content.trim(),
         [targetType === 'room' ? 'roomId' : 'conversationId']: targetId,
+        parentMessageId: replyingTo?.id,
       });
+
+      if (replyingTo) setReplyingTo(null);
     }
 
     setContent('');
@@ -75,21 +82,43 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
     }, 3000);
   };
 
+  const { replyingTo, setReplyingTo } = useChatStore();
+
   useEffect(() => {
     const handleEditTrigger = (e: any) => {
       const message = e.detail;
       setEditingMessage(message);
       setContent(message.content);
+      if (replyingTo) setReplyingTo(null); // Cancel reply if editing
       // Focus the input
       document.getElementById('message-input')?.focus();
     };
 
     window.addEventListener('message:edit:trigger', handleEditTrigger);
     return () => window.removeEventListener('message:edit:trigger', handleEditTrigger);
-  }, []);
+  }, [replyingTo, setReplyingTo]);
 
   return (
     <div className="px-6 py-5 shrink-0 bg-white border-t border-slate-200 shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.05)] z-20">
+      {replyingTo && (
+        <div className="mb-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between animate-pop-in">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10h10a8 8 0 018 8v2M3 10l5-5m-5 5l5 5" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div>
+              <p className="text-[13px] font-bold text-indigo-900">Replying to {replyingTo.sender.username}</p>
+              <p className="text-[11px] text-indigo-600 truncate max-w-[400px]">{replyingTo.content}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setReplyingTo(null)}
+            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-600 transition-colors uppercase tracking-wider"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
       {editingMessage && (
         <div className="mb-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between animate-pop-in">
           <div className="flex items-center gap-3">

@@ -8,6 +8,7 @@ import { useSocketEvents } from '@/hooks/useSocket';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { ChatView } from '@/components/chat/ChatView';
 import { WelcomeView } from '@/components/chat/WelcomeView';
+import { ForwardingModal } from '@/components/chat/ForwardingModal';
 
 export default function ChatPage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -67,6 +68,8 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col min-w-0">
         {currentRoom || currentConversation ? <ChatView /> : <WelcomeView />}
       </div>
+
+      <ForwardingModal />
     </div>
   );
 }

@@ -117,7 +117,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message:send')
   async handleMessage(
     @ConnectedSocket() client: AuthenticatedSocket,
-    @MessageBody() data: { content: string; roomId?: string; conversationId?: string; type?: string; mediaIds?: string[] },
+    @MessageBody() data: {
+      content: string;
+      roomId?: string;
+      conversationId?: string;
+      type?: string;
+      mediaIds?: string[];
+      parentMessageId?: string;
+      forwarded?: boolean;
+    },
   ) {
     const userId = client.data.user.sub;
     this.logger.debug(`Message from ${client.data.user.username}: content len=${data.content?.length}, media=${data.mediaIds?.length}, room=${data.roomId}, conv=${data.conversationId}`);
@@ -144,6 +152,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversationId: data.conversationId,
       type: (data.type as any) || 'TEXT',
       mediaIds: data.mediaIds,
+      parentMessageId: data.parentMessageId,
+      forwarded: !!data.forwarded,
     });
 
     if (data.roomId) {
@@ -279,10 +289,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: { messageId: string },
   ) {
     const userId = client.data.user.sub;
-    const updatedMessage = await this.messagesService.togglePin(data.messageId, userId);
+    const message = await this.messagesService.togglePin(data.messageId, userId);
+    
+    if (message.roomId) {
+      this.server.to(`room:${message.roomId}`).emit('message:updated', message);
+    } else if (message.conversationId) {
+      this.server.to(`conversation:${message.conversationId}`).emit('message:updated', message);
+    }
+  }
 
-    const target = updatedMessage.roomId ? `room:${updatedMessage.roomId}` : `conversation:${updatedMessage.conversationId}`;
-    this.server.to(target).emit('message:updated', updatedMessage);
+  @SubscribeMessage('mark:read')
+  async handleMarkRead(
+    @ConnectedSocket() client: AuthenticatedSocket,
+    @MessageBody() data: { roomId?: string; conversationId?: string },
+  ) {
+    const userId = client.data.user.sub;
+    
+    if (data.roomId) {
+      await this.roomsService.markAsRead(userId, data.roomId);
+      // Optionally notify others in the room or just acknowledge
+    } else if (data.conversationId) {
+      await this.conversationsService.markAsRead(userId, data.conversationId);
+      // For DMs, notify the other participant that messages were read
+      this.server.to(`conversation:${data.conversationId}`).emit('conversation:read', { 
+        conversationId: data.conversationId, 
+        userId, 
+        readAt: new Date() 
+      });
+    }
   }
 
   @SubscribeMessage('conversation:join')

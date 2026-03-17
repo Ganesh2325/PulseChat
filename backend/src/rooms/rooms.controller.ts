@@ -9,8 +9,8 @@ export class RoomsController {
   constructor(private readonly roomsService: RoomsService) {}
 
   @Get()
-  async listRooms() {
-    return this.roomsService.listRooms();
+  async listRooms(@CurrentUser('sub') userId: string) {
+    return this.roomsService.listRooms(userId);
   }
 
   @Get(':id')

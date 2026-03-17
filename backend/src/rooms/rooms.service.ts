@@ -30,15 +30,20 @@ export class RoomsService implements OnModuleInit {
     this.logger.log('Default rooms seeded');
   }
 
-  async listRooms() {
+  async listRooms(userId: string) {
     const rooms = await this.prisma.room.findMany({
-      include: { _count: { select: { members: true, messages: true } } },
+      include: { 
+        members: { where: { userId } },
+        _count: { select: { members: true, messages: true } } 
+      },
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
     });
     return rooms.map((room) => ({
       ...room,
       memberCount: room._count.members,
       messageCount: room._count.messages,
+      lastReadAt: room.members[0]?.lastReadAt || null,
+      members: undefined,
       _count: undefined,
     }));
   }
@@ -126,5 +131,13 @@ export class RoomsService implements OnModuleInit {
       },
       select: { id: true },
     });
+  }
+
+  async markAsRead(userId: string, roomId: string) {
+    await this.prisma.roomMember.update({
+      where: { userId_roomId: { userId, roomId } },
+      data: { lastReadAt: new Date() },
+    });
+    return { success: true };
   }
 }
