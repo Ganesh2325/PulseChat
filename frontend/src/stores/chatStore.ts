@@ -49,6 +49,7 @@ interface ChatState {
   conversations: Conversation[];
   currentConversation: Conversation | null;
   messages: Message[];
+  discoverableUsers: any[];
   isLoadingMessages: boolean;
   replyingTo: Message | null;
 
@@ -58,6 +59,7 @@ interface ChatState {
   fetchConversations: () => Promise<void>;
   setCurrentConversation: (conversation: Conversation | null) => void;
   fetchConversationMessages: (conversationId: string) => Promise<void>;
+  fetchDiscoverableUsers: () => Promise<void>;
   addMessage: (message: Message) => void;
   joinRoom: (roomId: string) => Promise<void>;
   createConversation: (participantId: string) => Promise<Conversation>;
@@ -78,6 +80,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   conversations: [],
   currentConversation: null,
   messages: [],
+  discoverableUsers: [],
   isLoadingMessages: false,
   replyingTo: null,
   forwardingMessage: null,
@@ -118,6 +121,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } finally {
       set({ isLoadingMessages: false });
     }
+  },
+
+  fetchDiscoverableUsers: async () => {
+    const { data } = await api.get('/users/discover');
+    set({ discoverableUsers: data });
   },
 
   deleteConversation: async (conversationId) => {

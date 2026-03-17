@@ -13,7 +13,7 @@ interface SidebarProps {
 
 export function Sidebar({ onClose }: SidebarProps) {
   const { user, logout } = useAuthStore();
-  const { rooms, conversations, currentRoom, currentConversation, fetchRooms, fetchConversations, setCurrentRoom, setCurrentConversation, fetchRoomMessages, fetchConversationMessages, joinRoom, createConversation } = useChatStore();
+  const { rooms, conversations, discoverableUsers, currentRoom, currentConversation, fetchRooms, fetchConversations, fetchDiscoverableUsers, setCurrentRoom, setCurrentConversation, fetchRoomMessages, fetchConversationMessages, joinRoom, createConversation } = useChatStore();
   const { unreadCount, fetchUnreadCount } = useNotificationStore();
   const { onlineUsers } = usePresenceStore();
 
@@ -21,7 +21,8 @@ export function Sidebar({ onClose }: SidebarProps) {
     fetchRooms();
     fetchConversations();
     fetchUnreadCount();
-  }, [fetchRooms, fetchConversations, fetchUnreadCount]);
+    fetchDiscoverableUsers();
+  }, [fetchRooms, fetchConversations, fetchUnreadCount, fetchDiscoverableUsers]);
 
   const handleRoomClick = async (room: any) => {
     setCurrentRoom(room);
@@ -68,11 +69,11 @@ export function Sidebar({ onClose }: SidebarProps) {
     <div className="w-80 h-full flex flex-col border-r border-white/5 bg-[var(--bg-secondary)] shadow-2xl">
       {/* Header */}
       <div className="p-5 border-b border-white/5 flex items-center justify-between relative group">
-        <div className="flex items-center gap-3 select-none cursor-help" 
-             onDoubleClick={() => {
-               const diag = document.getElementById('diag-panel');
-               if (diag) diag.style.display = diag.style.display === 'none' ? 'block' : 'none';
-             }}>
+        <div className="flex items-center gap-3 select-none cursor-help"
+          onDoubleClick={() => {
+            const diag = document.getElementById('diag-panel');
+            if (diag) diag.style.display = diag.style.display === 'none' ? 'block' : 'none';
+          }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] transform transition-transform group-hover:scale-110" style={{ background: 'linear-gradient(135deg, var(--accent), #7e22ce)' }}>
             <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -80,9 +81,9 @@ export function Sidebar({ onClose }: SidebarProps) {
           </div>
           <span className="font-black text-xl tracking-tight text-[var(--text-primary)]">PulseChat</span>
         </div>
-        
-        <button 
-          onClick={() => { fetchRooms(); fetchConversations(); fetchUnreadCount(); }}
+
+        <button
+          onClick={() => { fetchRooms(); fetchConversations(); fetchUnreadCount(); fetchDiscoverableUsers(); }}
           className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-white/5 rounded-lg transition-all"
           title="Refresh"
         >
@@ -161,7 +162,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                         )}
                       </div>
                     </button>
-                    
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -182,6 +183,43 @@ export function Sidebar({ onClose }: SidebarProps) {
             )}
           </div>
         </div>
+
+        {/* Discover People */}
+        {discoverableUsers.length > 0 && (
+          <div className="p-3 pt-0">
+            <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2 flex items-center justify-between">
+              🌐 Discover People
+              <span className="text-[10px] bg-[var(--accent)]/20 text-[var(--accent)] px-2 py-0.5 rounded-full animate-pulse">New</span>
+            </h3>
+            <div className="space-y-1">
+              {discoverableUsers.map((u) => {
+                const isAlreadyInChat = conversations.some(c => c.participants.some(p => p.id === u.id));
+                if (isAlreadyInChat) return null; // Only show new potential DMs
+                
+                return (
+                  <button
+                    key={`discover-${u.id}`}
+                    onClick={() => handleStartDM(u.id)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 hover:bg-[var(--bg-hover)] group border border-dashed border-white/5 hover:border-[var(--accent)]/30"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[12px] font-black text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-all">
+                      {u.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <div className="font-bold text-[14px] text-[var(--text-primary)] group-hover:text-white transition-colors truncate">
+                        {u.username}
+                      </div>
+                      <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Start private chat</div>
+                    </div>
+                    <svg className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Active Users */}
         {activeUsersList.length > 0 && (

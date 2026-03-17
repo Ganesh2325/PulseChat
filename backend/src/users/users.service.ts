@@ -53,6 +53,18 @@ export class UsersService {
     return presence || { status: 'offline', lastSeen: null };
   }
 
+  async getDiscoverableUsers(excludeUserId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        id: { not: excludeUserId },
+        status: 'ACTIVE',
+      },
+      select: { id: true, username: true, avatar: true, bio: true, isGuest: true },
+      take: 20,
+      orderBy: { lastSeen: 'desc' },
+    });
+  }
+
   async updateLastSeen(userId: string) {
     await this.prisma.user.update({
       where: { id: userId },

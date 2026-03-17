@@ -26,6 +26,11 @@ export class UsersController {
     return this.usersService.searchUsers(query);
   }
 
+  @Get('discover')
+  async discoverUsers(@CurrentUser('sub') userId: string) {
+    return this.usersService.getDiscoverableUsers(userId);
+  }
+
   @Get(':id')
   async getUser(@Param('id') id: string) {
     return this.usersService.findById(id);

@@ -85,14 +85,14 @@ export function ChatView() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
+          <button
             onClick={() => setShowSearch(true)}
             className="p-3 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10 hover:shadow-xl"
             title="Search (Ctrl+F)"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </button>
-          
+
           {currentRoom && (
             <div className="hidden sm:flex items-center gap-2 text-[12px] font-black text-[var(--text-secondary)] bg-white/5 px-4 py-2 rounded-2xl border border-white/5 shadow-inner">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
@@ -164,18 +164,18 @@ export function ChatView() {
             {messages.reduce((groups: any[], message, index) => {
               const prevMessage = messages[index - 1];
               const nextMessage = messages[index + 1];
-              
+
               const messageDate = new Date(message.createdAt);
               const prevMessageDate = prevMessage ? new Date(prevMessage.createdAt) : null;
-              
-              const isNewDay = !prevMessageDate || 
-                              messageDate.toDateString() !== prevMessageDate.toDateString();
-              
+
+              const isNewDay = !prevMessageDate ||
+                messageDate.toDateString() !== prevMessageDate.toDateString();
+
               if (isNewDay) {
                 const dateLabel = format(messageDate, 'MMMM d, yyyy');
                 const isToday = messageDate.toDateString() === new Date().toDateString();
                 const isYesterday = messageDate.toDateString() === new Date(Date.now() - 86400000).toDateString();
-                
+
                 groups.push(
                   <div key={`date-${message.id}`} className="flex items-center gap-4 my-10 animate-fade-in">
                     <div className="flex-1 h-px bg-white/5"></div>
@@ -187,19 +187,19 @@ export function ChatView() {
                 );
               }
 
-              const isGrouped = prevMessage && 
-                               prevMessage.senderId === message.senderId && 
-                               !isNewDay &&
-                               (messageDate.getTime() - prevMessageDate!.getTime()) < 300000;
-              
-              const isLastInGroup = !nextMessage || 
-                                   nextMessage.senderId !== message.senderId || 
-                                   (new Date(nextMessage.createdAt).getTime() - messageDate.getTime()) > 300000;
+              const isGrouped = prevMessage &&
+                prevMessage.senderId === message.senderId &&
+                !isNewDay &&
+                (messageDate.getTime() - prevMessageDate!.getTime()) < 300000;
 
-              const lastReadAt = targetType === 'room' 
-                ? currentRoom?.lastReadAt 
+              const isLastInGroup = !nextMessage ||
+                nextMessage.senderId !== message.senderId ||
+                (new Date(nextMessage.createdAt).getTime() - messageDate.getTime()) > 300000;
+
+              const lastReadAt = targetType === 'room'
+                ? currentRoom?.lastReadAt
                 : currentConversation?.participants.find(p => p.id === user?.id)?.lastReadAt;
-              
+
               const isNew = lastReadAt && new Date(message.createdAt) > new Date(lastReadAt) && message.senderId !== user?.id;
               const showNewDivider = isNew && (!prevMessage || (lastReadAt && new Date(prevMessage.createdAt) <= new Date(lastReadAt)));
 
@@ -226,12 +226,12 @@ export function ChatView() {
                   />
                 </div>
               );
-              
+
               return groups;
             }, [])}
           </div>
         )}
-     <div ref={messagesEndRef} />
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Typing indicator */}
