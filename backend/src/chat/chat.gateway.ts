@@ -252,7 +252,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     const userId = client.data.user.sub;
     await this.messagesService.deleteMessageForMe(data.messageId, userId);
-    client.emit('message:deleted:me', { messageId: data.messageId });
+    // Broadcast to all user's sessions for multi-device sync
+    this.server.to(`user:${userId}`).emit('message:deleted:me', { messageId: data.messageId });
   }
 
   @SubscribeMessage('message:react')

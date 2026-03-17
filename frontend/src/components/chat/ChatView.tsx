@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState } from 'react';
+import { format } from 'date-fns';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
 import { usePresenceStore } from '@/stores/presenceStore';
@@ -159,19 +160,41 @@ export function ChatView() {
             <p className="text-[15px] font-bold text-[var(--text-secondary)] mt-3 max-w-[200px] opacity-80">Start a cinematic conversation in this space.</p>
           </div>
         ) : (
-          <>
-            {/* Native ad placeholder (roughly every 50 messages) */}
-            {messages.map((message, index) => {
+          <div className="space-y-1">
+            {messages.reduce((groups: any[], message, index) => {
               const prevMessage = messages[index - 1];
               const nextMessage = messages[index + 1];
               
+              const messageDate = new Date(message.createdAt);
+              const prevMessageDate = prevMessage ? new Date(prevMessage.createdAt) : null;
+              
+              const isNewDay = !prevMessageDate || 
+                              messageDate.toDateString() !== prevMessageDate.toDateString();
+              
+              if (isNewDay) {
+                const dateLabel = format(messageDate, 'MMMM d, yyyy');
+                const isToday = messageDate.toDateString() === new Date().toDateString();
+                const isYesterday = messageDate.toDateString() === new Date(Date.now() - 86400000).toDateString();
+                
+                groups.push(
+                  <div key={`date-${message.id}`} className="flex items-center gap-4 my-10 animate-fade-in">
+                    <div className="flex-1 h-px bg-white/5"></div>
+                    <span className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] bg-[var(--bg-secondary)]/50 px-6 py-2 rounded-full border border-white/5 shadow-inner backdrop-blur-md">
+                      {isToday ? 'Today' : isYesterday ? 'Yesterday' : dateLabel}
+                    </span>
+                    <div className="flex-1 h-px bg-white/5"></div>
+                  </div>
+                );
+              }
+
               const isGrouped = prevMessage && 
                                prevMessage.senderId === message.senderId && 
-                               (new Date(message.createdAt).getTime() - new Date(prevMessage.createdAt).getTime()) < 300000;
+                               !isNewDay &&
+                               (messageDate.getTime() - prevMessageDate!.getTime()) < 300000;
               
               const isLastInGroup = !nextMessage || 
                                    nextMessage.senderId !== message.senderId || 
-                                   (new Date(nextMessage.createdAt).getTime() - new Date(message.createdAt).getTime()) > 300000;
+                                   (new Date(nextMessage.createdAt).getTime() - messageDate.getTime()) > 300000;
 
               const lastReadAt = targetType === 'room' 
                 ? currentRoom?.lastReadAt 
@@ -180,7 +203,7 @@ export function ChatView() {
               const isNew = lastReadAt && new Date(message.createdAt) > new Date(lastReadAt) && message.senderId !== user?.id;
               const showNewDivider = isNew && (!prevMessage || (lastReadAt && new Date(prevMessage.createdAt) <= new Date(lastReadAt)));
 
-              return (
+              groups.push(
                 <div key={message.id}>
                   {showNewDivider && (
                     <div className="flex items-center gap-4 my-8">
@@ -203,10 +226,12 @@ export function ChatView() {
                   />
                 </div>
               );
-            })}
-          </>
+              
+              return groups;
+            }, [])}
+          </div>
         )}
-        <div ref={messagesEndRef} />
+     <div ref={messagesEndRef} />
       </div>
 
       {/* Typing indicator */}

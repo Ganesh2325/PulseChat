@@ -199,7 +199,9 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             >
               {message.sender.username}
             </button>
-            <span className="text-[11px] font-bold text-[var(--text-muted)] opacity-80">{time}</span>
+            <span className="text-[11px] font-bold text-[var(--text-muted)] opacity-80" title={format(new Date(message.createdAt), 'MMMM d, yyyy HH:mm:ss')}>
+              {format(new Date(message.createdAt), 'MMM d, HH:mm')}
+            </span>
             {message.isPinned && (
               <span className="inline-flex items-center gap-1 text-[10px] bg-amber-500/10 text-amber-500 px-2.5 py-0.5 rounded-full font-black border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.414a4 4 0 00-5.656-5.656l-6.415 6.414a6 6 0 108.486 8.486L20.5 13" /></svg>
@@ -211,28 +213,30 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
 
         <div
           onClick={(e) => {
+            if (message.isDeleted) return;
             if (!isMobile) {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }
           }}
           onDoubleClick={(e) => {
+            if (message.isDeleted) return;
             if (isMobile) {
               e.stopPropagation();
               setShowMenu(!showMenu);
             }
           }}
-          className="px-4 py-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 group-hover:shadow-md relative cursor-pointer select-none"
+          className={`px-4 py-2.5 rounded-2xl text-[15px] font-medium transition-all duration-200 group-hover:shadow-md relative select-none ${message.isDeleted ? 'opacity-40 italic cursor-default' : 'cursor-pointer'}`}
           style={{
             background: isOwn ? 'var(--message-own)' : 'var(--message-other)',
             borderTopLeftRadius: !isOwn && showAvatar ? '4px' : undefined,
             borderTopRightRadius: isOwn && showAvatar ? '4px' : undefined,
             color: 'white',
-            boxShadow: isOwn ? '0 8px 16px -4px var(--accent-glow)' : '0 4px 12px -2px rgba(0,0,0,0.2)'
+            boxShadow: isOwn && !message.isDeleted ? '0 8px 16px -4px var(--accent-glow)' : '0 4px 12px -2px rgba(0,0,0,0.2)'
           }}
         >
           {/* Dropdown Indicator (Desktop) */}
-          {!isMobile && (
+          {!isMobile && !message.isDeleted && (
             <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
               <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
@@ -241,7 +245,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
           )}
 
           {/* Forwarded label */}
-          {message.isForwarded && (
+          {message.isForwarded && !message.isDeleted && (
             <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] italic mb-1 opacity-80 border-b border-black/5 pb-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" /></svg>
               Forwarded
@@ -249,7 +253,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
           )}
 
           {/* Reply Preview */}
-          {message.parentMessage && (
+          {message.parentMessage && !message.isDeleted && (
             <div 
               onClick={(e) => {
                 e.stopPropagation();
@@ -271,22 +275,26 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
             </div>
           )}
 
-          {message.content.split(/(@\w+)/g).map((part, i) =>
-            part.startsWith('@') ? (
-              <span key={i} className="font-semibold" style={{ color: 'var(--accent)' }}>{part}</span>
-            ) : (
-              <span key={i}>{part}</span>
-            ),
+          {message.isDeleted ? (
+            <span>This message was deleted.</span>
+          ) : (
+            message.content.split(/(@\w+)/g).map((part, i) =>
+              part.startsWith('@') ? (
+                <span key={i} className="font-semibold" style={{ color: 'var(--accent)' }}>{part}</span>
+              ) : (
+                <span key={i}>{part}</span>
+              ),
+            )
           )}
 
-          {message.isEdited && (
+          {message.isEdited && !message.isDeleted && (
             <span className="text-[10px] text-[var(--text-muted)] italic ml-1 opacity-70">(edited)</span>
           )}
 
           {/* Status indicator for own messages or just timestamp */}
           {!showAvatar && (
             <span className="inline-flex ml-1.5 text-[10px] text-[var(--text-muted)] opacity-60">
-              {time}
+              {format(new Date(message.createdAt), 'MMM d, HH:mm')}
             </span>
           )}
         </div>
