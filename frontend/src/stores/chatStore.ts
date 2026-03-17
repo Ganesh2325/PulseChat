@@ -248,10 +248,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: state.messages.filter(m => m.id !== messageId),
       conversations: state.conversations.map(conv => {
         if (conv.lastMessage?.id === messageId) {
-          // If the last message is deleted for me, we might want to find the next one, 
-          // but for now just null it or keep it as is. 
-          // Usually, "delete for me" shouldn't necessarily hide the conversation's last message hint if it's still there for others,
-          // but since it's "for me", maybe it should.
           return { ...conv, lastMessage: null }; 
         }
         return conv;

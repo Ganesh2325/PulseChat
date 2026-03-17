@@ -96,6 +96,7 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
   };
 
   const handleEdit = () => {
+    if (!isOwn) return;
     // We will trigger a global edit state that MessageComposer can listen to
     window.dispatchEvent(new CustomEvent('message:edit:trigger', { detail: message }));
     setShowMenu(false);
@@ -165,9 +166,11 @@ export function MessageBubble({ message, isOwn, showAvatar, isGrouped, isLastInG
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10h10a8 8 0 018 8v2M3 10l5-5m-5 5l5 5" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
 
-            <button onClick={handleEdit} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Edit">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
+            {isOwn && (
+              <button onClick={handleEdit} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Edit">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </button>
+            )}
 
             <button onClick={handleForward} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500" title="Forward">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M14 5l7 7m0 0l-7 7m7-7H3" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
