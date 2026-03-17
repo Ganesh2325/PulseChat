@@ -47,14 +47,14 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4 bg-black/40 backdrop-blur-[2px] animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-24 px-4 bg-black/80 backdrop-blur-xl animate-fade-in" onClick={onClose}>
       <div 
-        className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-slide-up"
+        className="bg-[var(--bg-surface-l3)] w-full max-w-2xl rounded-[32px] shadow-[0_32px_128px_-16px_rgba(0,0,0,0.8)] overflow-hidden animate-slide-up border border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 border-b flex items-center gap-4 bg-slate-50">
-          <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <div className="p-6 border-b border-white/5 flex items-center gap-5 bg-[var(--bg-secondary)]/50">
+          <svg className="w-5 h-5 text-[var(--accent)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <input 
             autoFocus
@@ -62,11 +62,11 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
             placeholder="Search messages, keywords, or mentions..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 bg-transparent border-none text-lg font-medium text-slate-800 focus:ring-0 placeholder:text-slate-400"
+            className="flex-1 bg-transparent border-none text-[18px] font-black text-white focus:ring-0 placeholder:text-[var(--text-muted)]"
           />
           <button 
             onClick={onClose}
-            className="text-[12px] font-bold text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+            className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] hover:text-white transition-colors px-3 py-1.5 bg-white/5 rounded-lg border border-white/5"
           >
             Esc
           </button>
@@ -83,17 +83,17 @@ export function SearchOverlay({ onClose }: { onClose: () => void }) {
                 <button
                   key={msg.id}
                   onClick={() => handleJumpTo(msg)}
-                  className="w-full flex items-start gap-4 p-3 hover:bg-indigo-50 rounded-xl transition-colors text-left group"
+                  className="w-full flex items-start gap-4 p-4 hover:bg-white/5 rounded-2xl transition-all text-left group border border-transparent hover:border-white/5"
                 >
-                  <div className="w-10 h-10 shrink-0 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-600">
+                  <div className="w-10 h-10 shrink-0 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center font-black text-[var(--accent)] shadow-sm">
                     {msg.sender.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-bold text-slate-800 text-sm group-hover:text-indigo-600 transition-colors">{msg.sender.username}</span>
-                      <span className="text-[11px] font-medium text-slate-400">{format(new Date(msg.createdAt), 'MMM d, HH:mm')}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-black text-white text-[14px] group-hover:text-[var(--accent)] transition-colors">{msg.sender.username}</span>
+                      <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">{format(new Date(msg.createdAt), 'MMM d, HH:mm')}</span>
                     </div>
-                    <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
+                    <p className="text-[14px] text-[var(--text-secondary)] line-clamp-2 leading-relaxed font-medium">
                       {msg.content}
                     </p>
                   </div>

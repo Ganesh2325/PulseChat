@@ -18,35 +18,36 @@ export function DeleteMessageModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px] animate-fade-in">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
       <div 
-        className="bg-white w-full max-w-[320px] rounded-[24px] shadow-2xl overflow-hidden animate-pop-in"
+        className="bg-[var(--bg-surface-l3)] w-full max-w-[340px] rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] overflow-hidden animate-pop-in border border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 pt-6 pb-4">
-          <h2 className="text-[17px] font-semibold text-slate-900 mb-2">Delete message?</h2>
+        <div className="px-8 pt-8 pb-4">
+          <h2 className="text-[20px] font-black text-white tracking-tight">Delete message?</h2>
+          <p className="text-[14px] text-[var(--text-secondary)] mt-2 font-medium">This action cannot be undone.</p>
         </div>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col p-2">
           {canDeleteForEveryone && (
             <button 
               onClick={(e) => { e.stopPropagation(); onDeleteEveryone(); }}
-              className="w-full px-6 py-4 text-left text-[15px] font-medium text-red-500 hover:bg-slate-50 active:bg-slate-100 transition-colors border-t border-slate-100"
+              className="w-full px-6 py-4 text-left text-[15px] font-black text-red-400 hover:bg-red-500/10 active:bg-red-500/20 transition-all rounded-2xl"
             >
-              Delete for everyone
+              Delete For Everyone
             </button>
           )}
           
           <button 
             onClick={(e) => { e.stopPropagation(); onDeleteMe(); }}
-            className="w-full px-6 py-4 text-left text-[15px] font-medium text-indigo-600 hover:bg-slate-50 active:bg-slate-100 transition-colors border-t border-slate-100"
+            className="w-full px-6 py-4 text-left text-[15px] font-black text-[var(--accent)] hover:bg-[var(--accent)]/10 active:bg-[var(--accent)]/20 transition-all rounded-2xl"
           >
-            Delete for me
+            Delete For Me
           </button>
 
           <button 
             onClick={(e) => { e.stopPropagation(); onCancel(); }}
-            className="w-full px-6 py-4 text-left text-[15px] font-medium text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition-colors border-t border-slate-100"
+            className="w-full px-6 py-4 text-left text-[15px] font-black text-[var(--text-secondary)] hover:bg-white/5 active:bg-white/10 transition-all rounded-2xl"
           >
             Cancel
           </button>

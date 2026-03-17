@@ -99,35 +99,35 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
   }, [replyingTo, setReplyingTo]);
 
   return (
-    <div className="px-6 py-5 shrink-0 bg-white border-t border-slate-200 shadow-[0_-8px_20px_-10px_rgba(0,0,0,0.05)] z-20">
+    <div className="px-6 py-6 shrink-0 bg-[var(--bg-secondary)] border-t border-white/5 shadow-[0_-24px_48px_-12px_rgba(0,0,0,0.5)] z-20">
       {replyingTo && (
-        <div className="mb-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between animate-pop-in">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
+        <div className="mb-4 px-4 py-3 bg-[var(--bg-surface-l3)] border border-white/5 rounded-2xl flex items-center justify-between animate-pop-in shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-[var(--accent)]/20 rounded-xl text-[var(--accent)] shadow-[0_0_15px_var(--accent-glow)]">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M3 10h10a8 8 0 018 8v2M3 10l5-5m-5 5l5 5" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <div>
-              <p className="text-[13px] font-bold text-indigo-900">Replying to {replyingTo.sender.username}</p>
-              <p className="text-[11px] text-indigo-600 truncate max-w-[400px]">{replyingTo.content}</p>
+              <p className="text-[12px] font-black text-white/90 uppercase tracking-tighter">Replying to {replyingTo.sender.username}</p>
+              <p className="text-[13px] text-[var(--text-secondary)] truncate max-w-[400px] mt-0.5">{replyingTo.content}</p>
             </div>
           </div>
           <button 
             onClick={() => setReplyingTo(null)}
-            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-600 transition-colors uppercase tracking-wider"
+            className="text-[10px] font-black text-[var(--accent)] hover:text-white transition-colors uppercase tracking-[0.2em] px-3 py-1 bg-white/5 rounded-lg border border-white/5"
           >
             Cancel
           </button>
         </div>
       )}
       {editingMessage && (
-        <div className="mb-3 px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between animate-pop-in">
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-indigo-100 rounded-lg text-indigo-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+        <div className="mb-4 px-4 py-3 bg-[var(--bg-surface-l3)] border border-white/5 rounded-2xl flex items-center justify-between animate-pop-in shadow-xl">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-amber-500/20 rounded-xl text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <div>
-              <p className="text-[13px] font-bold text-indigo-900">Editing Message</p>
-              <p className="text-[11px] text-indigo-600 truncate max-w-[400px]">Original: {editingMessage.content}</p>
+              <p className="text-[12px] font-black text-white/90 uppercase tracking-tighter">Editing Message</p>
+              <p className="text-[13px] text-[var(--text-secondary)] truncate max-w-[400px] mt-0.5">Original: {editingMessage.content}</p>
             </div>
           </div>
           <button 
@@ -135,13 +135,13 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
               setEditingMessage(null);
               setContent('');
             }}
-            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-600 transition-colors uppercase tracking-wider"
+            className="text-[10px] font-black text-amber-500 hover:text-white transition-colors uppercase tracking-[0.2em] px-3 py-1 bg-white/5 rounded-lg border border-white/5"
           >
             Cancel
           </button>
         </div>
       )}
-      <div className="flex items-end gap-3 rounded-[28px] p-3 bg-slate-50 border border-slate-200 focus-within:bg-white focus-within:border-[#1a73e8] focus-within:ring-4 focus-within:ring-[#1a73e8]/15 focus-within:shadow-lg transition-all duration-300">
+      <div className="flex items-end gap-3 rounded-[32px] p-2 bg-[var(--bg-primary)] border border-white/5 focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_30px_var(--accent-glow)] transition-all duration-500">
         <textarea
           id="message-input"
           value={content}
@@ -151,7 +151,7 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           }}
           onKeyDown={handleKeyDown}
           placeholder={targetName ? `Message ${targetType === 'room' ? '' : '@'}${targetName}...` : "Message PulseChat..."}
-          className="flex-1 bg-transparent text-[16px] resize-none outline-none py-2 px-2 max-h-40 min-h-[32px] text-slate-800 placeholder-slate-400 font-medium"
+          className="flex-1 bg-transparent text-[16px] resize-none outline-none py-3 px-4 max-h-40 min-h-[48px] text-white placeholder-[var(--text-muted)] font-medium"
           rows={1}
         />
 
@@ -164,9 +164,9 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           disabled={!content.trim()}
           className="p-3 rounded-2xl transition-all duration-300 shrink-0 disabled:opacity-30 disabled:scale-95"
           style={{ 
-            background: content.trim() ? '#25D366' : 'transparent', 
+            background: content.trim() ? 'var(--accent)' : 'transparent', 
             color: content.trim() ? 'white' : 'var(--text-muted)', 
-            boxShadow: content.trim() ? '0 4px 12px rgba(37, 211, 102, 0.4)' : 'none' 
+            boxShadow: content.trim() ? '0 8px 20px var(--accent-glow)' : 'none' 
           }}
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
