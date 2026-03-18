@@ -8,7 +8,11 @@ import { RoomList } from './RoomList';
 import { ConversationList } from './ConversationList';
 import { getSocket } from '@/lib/socket';
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const router = useRouter();
   const params = useParams();
   const { user, logout } = useAuthStore();
@@ -47,12 +51,14 @@ export function Sidebar() {
     setCurrentRoom(room);
     await fetchRoomMessages(room.id);
     getSocket()?.emit('room:join', { roomId: room.id });
+    onClose();
   };
 
   const handleConversationClick = async (conv: any) => {
     setCurrentConversation(conv);
     await fetchConversationMessages(conv.id);
     getSocket()?.emit('conversation:join', { conversationId: conv.id });
+    onClose();
   };
 
   const handleStartDM = async (userId: string) => {
