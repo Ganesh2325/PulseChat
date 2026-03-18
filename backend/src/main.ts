@@ -7,9 +7,21 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { RedisIoAdapter } from './chat/redis-io.adapter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import { execSync } from 'child_process';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  
+  // Force DB migration during startup to bypass Render configuration issues
+  try {
+    logger.log('Starting Prisma migrations...');
+    execSync('npx prisma migrate deploy', { stdio: 'inherit' });
+    logger.log('Prisma migrations completed successfully.');
+  } catch (error: any) {
+    logger.error(`Migration failed: ${error.message}`);
+    // Non-fatal if the DB is already up to date, continuing
+  }
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
