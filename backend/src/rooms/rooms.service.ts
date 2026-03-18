@@ -2,11 +2,11 @@ import { Injectable, NotFoundException, ConflictException, Logger, OnModuleInit 
 import { PrismaService } from '../prisma/prisma.service';
 
 const DEFAULT_ROOMS = [
-  { name: 'Global', description: 'General discussion for everyone', isDefault: true },
-  { name: 'Gaming', description: 'Gaming discussions and LFG', isDefault: true },
-  { name: 'Coding', description: 'Programming help and discussions', isDefault: true },
-  { name: 'Students', description: 'Student community hub', isDefault: true },
-  { name: 'Random', description: 'Off-topic and fun', isDefault: true },
+  { name: 'global', description: 'General discussion for everyone', isDefault: true },
+  { name: 'coding', description: 'Future of technology and coding help', isDefault: true },
+  { name: 'gaming', description: 'Gaming discussions and LFG', isDefault: true },
+  { name: 'random', description: 'Off-topic and fun', isDefault: true },
+  { name: 'students', description: 'Student community hub', isDefault: true },
 ];
 
 @Injectable()

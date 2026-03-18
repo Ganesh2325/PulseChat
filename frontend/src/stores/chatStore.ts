@@ -70,8 +70,9 @@ interface ChatState {
   setReplyingTo: (message: Message | null) => void;
   forwardingMessage: Message | null;
   setForwardingMessage: (message: Message | null) => void;
-  clearMessages: () => void;
-  removeMessage: (messageId: string) => void;
+  unreadCount: number;
+  fetchUnreadCount: () => Promise<void>;
+  refreshAllData: () => Promise<void>;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -251,7 +252,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setForwardingMessage: (message) => set({ forwardingMessage: message }),
 
   clearMessages: () => set({ messages: [] }),
-  removeMessage: (messageId) => {
+  removeMessage: (messageId: string) => {
     set((state) => ({
       messages: state.messages.filter(m => m.id !== messageId),
       conversations: state.conversations.map(conv => {
@@ -261,5 +262,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return conv;
       })
     }));
+  },
+
+  unreadCount: 0,
+  fetchUnreadCount: async () => {
+    try {
+      const { data } = await api.get('/notifications/unread');
+      set({ unreadCount: data.count });
+    } catch {
+      // Fallback
+    }
+  },
+
+  refreshAllData: async () => {
+    await Promise.all([
+      get().fetchRooms(),
+      get().fetchConversations(),
+      get().fetchUnreadCount(),
+      get().fetchDiscoverableUsers(),
+    ]);
   },
 }));

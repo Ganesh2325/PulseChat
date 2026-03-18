@@ -49,6 +49,7 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.username, user.role, false);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    await this.joinDefaultRooms(user.id);
 
     this.logger.log(`User registered: ${user.username}`);
 
@@ -103,6 +104,7 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.username, user.role, true);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    await this.joinDefaultRooms(user.id);
 
     this.logger.log(`Guest login: ${username}`);
 
@@ -176,5 +178,20 @@ export class AuthService {
   private sanitizeUser(user: any) {
     const { passwordHash, refreshToken, ...sanitized } = user;
     return sanitized;
+  }
+
+  private async joinDefaultRooms(userId: string) {
+    const defaultRooms = await this.prisma.room.findMany({
+      where: { isDefault: true },
+      select: { id: true },
+    });
+
+    for (const room of defaultRooms) {
+      await this.prisma.roomMember.upsert({
+        where: { userId_roomId: { userId, roomId: room.id } },
+        update: {},
+        create: { userId, roomId: room.id },
+      });
+    }
   }
 }

@@ -1,273 +1,160 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useAuthStore } from '@/stores/authStore';
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { useChatStore } from '@/stores/chatStore';
-import { useNotificationStore } from '@/stores/notificationStore';
-import { usePresenceStore } from '@/stores/presenceStore';
+import { useAuthStore } from '@/stores/authStore';
+import { RoomList } from './RoomList';
+import { ConversationList } from './ConversationList';
 import { getSocket } from '@/lib/socket';
 
-interface SidebarProps {
-  onClose: () => void;
-}
-
-export function Sidebar({ onClose }: SidebarProps) {
+export default function Sidebar() {
+  const router = useRouter();
+  const params = useParams();
   const { user, logout } = useAuthStore();
-  const { rooms, conversations, discoverableUsers, currentRoom, currentConversation, fetchRooms, fetchConversations, fetchDiscoverableUsers, setCurrentRoom, setCurrentConversation, fetchRoomMessages, fetchConversationMessages, joinRoom, createConversation } = useChatStore();
-  const { unreadCount, fetchUnreadCount } = useNotificationStore();
-  const { onlineUsers } = usePresenceStore();
+  const { 
+    rooms, 
+    conversations, 
+    fetchRooms, 
+    fetchConversations, 
+    createConversation,
+    setCurrentRoom,
+    setCurrentConversation,
+    fetchRoomMessages,
+    fetchConversationMessages,
+  } = useChatStore();
 
-  useEffect(() => {
-    fetchRooms();
-    fetchConversations();
-    fetchUnreadCount();
-    fetchDiscoverableUsers();
-  }, [fetchRooms, fetchConversations, fetchUnreadCount, fetchDiscoverableUsers]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const handleRoomClick = async (room: any) => {
-    setCurrentRoom(room);
-    await joinRoom(room.id);
-    await fetchRoomMessages(room.id);
-    const socket = getSocket();
-    socket?.emit('room:join', { roomId: room.id });
-    onClose();
-  };
-
-  const handleConversationClick = async (conversation: any) => {
-    setCurrentConversation(conversation);
-    await fetchConversationMessages(conversation.id);
-    const socket = getSocket();
-    socket?.emit('conversation:join', { conversationId: conversation.id });
-    onClose();
-  };
-
-  const handleStartDM = async (otherUserId: string) => {
+  // Use a ref to prevent double-join on strict mode
+  const refreshAll = async () => {
+    setIsRefreshing(true);
     try {
-      const conversation = await createConversation(otherUserId);
-      setCurrentConversation(conversation);
-      await fetchConversationMessages(conversation.id);
-
-      const socket = getSocket();
-      socket?.emit('conversation:join', { conversationId: conversation.id });
-      onClose();
-    } catch (err) {
-      console.error('Failed to start DM:', err);
+      await Promise.all([
+        fetchRooms(),
+        fetchConversations(),
+      ]);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
-  // Derive active users from conversations participants who are currently online
-  const activeUsersList = Array.from(
-    new Map(
-      conversations
-        .flatMap((c) => c.participants)
-        .filter((p) => p.id !== user?.id && onlineUsers.has(p.id))
-        .map((p) => [p.id, p])
-    ).values()
-  );
+  useEffect(() => {
+    refreshAll();
+  }, []);
+
+  const handleRoomClick = async (room: any) => {
+    setCurrentRoom(room);
+    await fetchRoomMessages(room.id);
+    getSocket()?.emit('room:join', { roomId: room.id });
+  };
+
+  const handleConversationClick = async (conv: any) => {
+    setCurrentConversation(conv);
+    await fetchConversationMessages(conv.id);
+    getSocket()?.emit('conversation:join', { conversationId: conv.id });
+  };
+
+  const handleStartDM = async (userId: string) => {
+    const conv = await createConversation(userId);
+    if (conv) handleConversationClick(conv);
+  };
+
+  const currentRoomId = useChatStore(s => s.currentRoom?.id);
+  const currentConversationId = useChatStore(s => s.currentConversation?.id);
 
   return (
-    <div className="w-80 h-full flex flex-col border-r border-white/5 bg-[var(--bg-secondary)] shadow-2xl">
-      {/* Header */}
-      <div className="p-5 border-b border-white/5 flex items-center justify-between relative group">
-        <div className="flex items-center gap-3 select-none cursor-help"
-          onDoubleClick={() => {
-            const diag = document.getElementById('diag-panel');
-            if (diag) diag.style.display = diag.style.display === 'none' ? 'block' : 'none';
-          }}>
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_0_20px_var(--accent-glow)] transform transition-transform group-hover:scale-110" style={{ background: 'linear-gradient(135deg, var(--accent), #7e22ce)' }}>
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    <div className="w-80 h-full flex flex-col bg-[var(--bg-secondary)] border-r border-white/5 relative overflow-hidden">
+      {/* Cinematic Header */}
+      <div className="p-6 pb-2">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-purple-500 flex items-center justify-center shadow-[0_8px_20px_var(--accent-glow)]">
+              <span className="text-white text-xl font-black italic">P</span>
+            </div>
+            <div>
+              <h1 className="text-lg font-black tracking-tighter text-[var(--text-primary)]">PULSECHAT</h1>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-green-500/80 uppercase tracking-widest leading-none mt-0.5">Systems Online</span>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={refreshAll}
+            className={`p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin opacity-50' : ''}`}
+            title="Force Global Refresh"
+          >
+            <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-          </div>
-          <span className="font-black text-xl tracking-tight text-[var(--text-primary)]">PulseChat</span>
+          </button>
         </div>
 
-        <button
-          onClick={() => { fetchRooms(); fetchConversations(); fetchUnreadCount(); fetchDiscoverableUsers(); }}
-          className="p-2 text-[var(--text-muted)] hover:text-white hover:bg-white/5 rounded-lg transition-all"
-          title="Refresh"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-
-        {/* Hidden Diagnostic Panel */}
-        <div id="diag-panel" style={{ display: 'none' }} className="absolute top-full left-0 right-0 bg-black/95 backdrop-blur-3xl p-4 z-50 border-b border-white/10 text-[10px] font-mono animate-fade-in shadow-2xl">
-          <div className="text-[var(--accent)] font-bold mb-2 uppercase tracking-widest border-b border-white/5 pb-1">🔧 Diagnostics</div>
-          <div className="space-y-1 opacity-80">
-            <div>API: <span className="text-white">{process.env.NEXT_PUBLIC_API_URL || 'DEFAULT_4000'}</span></div>
-            <div>USER: <span className="text-white">{user?.id}</span></div>
-            <div>ROOMS: <span className="text-white">{rooms.length}</span></div>
-            <div>DMS: <span className="text-white">{conversations.length}</span></div>
-            <div>STATUS: <span className="text-green-400">CONNECTING...</span></div>
-          </div>
+        {/* Navigation Categories */}
+        <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-2xl mb-6">
+          <button className="flex-1 py-1.5 rounded-xl bg-[var(--bg-active)] text-white text-xs font-black shadow-sm tracking-wide uppercase">Chats</button>
+          <button className="flex-1 py-1.5 rounded-xl text-[var(--text-muted)] hover:text-white transition-colors text-xs font-black tracking-wide uppercase">Files</button>
+          <button className="flex-1 py-1.5 rounded-xl text-[var(--text-muted)] hover:text-white transition-colors text-xs font-black tracking-wide uppercase">Store</button>
         </div>
       </div>
 
-      {/* Rooms */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-3">
-          <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2">
-            📢 Channels
-          </h3>
-          <div className="space-y-1">
-            {rooms.map((room) => (
-              <button
-                key={room.id}
-                onClick={() => handleRoomClick(room)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-medium transition-all duration-150 group"
-                style={{
-                  background: currentRoom?.id === room.id ? 'var(--bg-active)' : 'transparent',
-                  color: currentRoom?.id === room.id ? 'var(--text-primary)' : 'var(--text-secondary)',
-                }}
-                onMouseEnter={(e) => { if (currentRoom?.id !== room.id) e.currentTarget.style.background = 'var(--bg-hover)'; }}
-                onMouseLeave={(e) => { if (currentRoom?.id !== room.id) e.currentTarget.style.background = 'transparent'; }}
-              >
-                <span className="text-base">{room.isDefault ? '#' : '🔒'}</span>
-                <span className="truncate flex-1 text-left">{room.name}</span>
-                {room.isSponsored && <span className="text-[10px]">⭐</span>}
-              </button>
-            ))}
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto px-4 space-y-8 scrollbar-hide py-2">
+        {/* ROOMS / CHANNELS */}
+        <section>
+          <div className="flex items-center justify-between mb-3 px-2">
+            <h2 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Public Channels</h2>
+            <span className="text-[10px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-muted)]">{rooms.length}</span>
           </div>
-        </div>
+          <RoomList 
+            onRoomClick={handleRoomClick} 
+            currentRoomId={currentRoomId} 
+          />
+        </section>
 
-        {/* DMs */}
-        <div className="p-3 pt-0">
-          <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2">
-            Direct Messages
-          </h3>
-          <div className="space-y-1">
-            {conversations.length === 0 ? (
-              <p className="text-[11px] text-[var(--text-muted)] px-3 py-2 italic font-medium opacity-60">No conversations yet.</p>
-            ) : (
-              conversations.map((conv) => {
-                const other = conv.participants.find((p) => p.id !== user?.id);
-                const isActive = currentConversation?.id === conv.id;
-                return (
-                  <div key={conv.id} className="group relative">
-                    <button
-                      onClick={() => handleConversationClick(conv)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 pr-10 relative group-hover:shadow-lg ${isActive ? 'bg-[var(--accent)] shadow-[0_8px_20px_var(--accent-glow)]' : 'hover:bg-[var(--bg-hover)]'}`}
-                    >
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className={`truncate font-bold text-[15px] ${isActive ? 'text-white' : 'text-[var(--text-primary)]'}`}>{other?.username || 'Unknown'}</div>
-                          {other && onlineUsers.has(other.id) && (
-                            <div className={`w-2 h-2 rounded-full ${isActive ? 'bg-white shadow-[0_0_8px_white]' : 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]'}`} />
-                          )}
-                        </div>
-                        {conv.lastMessage && (
-                          <div className={`truncate text-xs font-medium mt-0.5 ${isActive ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
-                            {conv.lastMessage.content}
-                          </div>
-                        )}
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm('Are you sure you want to delete this conversation?')) {
-                          useChatStore.getState().deleteConversation(conv.id);
-                        }
-                      }}
-                      className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${isActive ? 'text-white/60 hover:text-white hover:bg-white/10' : 'text-slate-500 hover:text-red-400 hover:bg-red-400/10'}`}
-                      title="Delete Conversation"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                );
-              })
-            )}
+        {/* PRIVATE MESSAGES */}
+        <section>
+          <div className="flex items-center justify-between mb-3 px-2">
+            <h2 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Direct Messages</h2>
+            <span className="text-[10px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-muted)]">{conversations.length}</span>
           </div>
-        </div>
-
-        {/* Discover People */}
-        {discoverableUsers.length > 0 && (
-          <div className="p-3 pt-0">
-            <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2 flex items-center justify-between">
-              🌐 Discover People
-              <span className="text-[10px] bg-[var(--accent)]/20 text-[var(--accent)] px-2 py-0.5 rounded-full animate-pulse">New</span>
-            </h3>
-            <div className="space-y-1">
-              {discoverableUsers.map((u) => {
-                const isAlreadyInChat = conversations.some(c => c.participants.some(p => p.id === u.id));
-                if (isAlreadyInChat) return null; // Only show new potential DMs
-                
-                return (
-                  <button
-                    key={`discover-${u.id}`}
-                    onClick={() => handleStartDM(u.id)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 hover:bg-[var(--bg-hover)] group border border-dashed border-white/5 hover:border-[var(--accent)]/30"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center text-[12px] font-black text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-all">
-                      {u.username.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="flex-1 text-left min-w-0">
-                      <div className="font-bold text-[14px] text-[var(--text-primary)] group-hover:text-white transition-colors truncate">
-                        {u.username}
-                      </div>
-                      <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-tighter">Start private chat</div>
-                    </div>
-                    <svg className="w-4 h-4 text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Active Users */}
-        {activeUsersList.length > 0 && (
-          <div className="p-3 pt-0">
-            <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 px-2">
-              🟢 Online Now
-            </h3>
-            <div className="space-y-1">
-              {activeUsersList.map((activeUser) => (
-                <button
-                  key={`online-${activeUser.id}`}
-                  onClick={() => handleStartDM(activeUser.id)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 hover:bg-[var(--bg-hover)] group"
-                >
-                  <div className="flex-1 text-left min-w-0">
-                    <div className="flex items-center gap-2">
-                      <div className="truncate font-bold text-[14px] text-[var(--text-primary)] group-hover:text-white transition-colors">
-                        {activeUser.username}
-                      </div>
-                      <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]" />
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
+          <ConversationList 
+            onConversationClick={handleConversationClick}
+            currentConversationId={currentConversationId}
+          />
+        </section>
       </div>
 
-      {/* User profile */}
-      <div className="border-t border-white/5 p-5 bg-[var(--bg-primary)]/50">
-        <button
-          onClick={logout}
-          className="w-full mb-4 py-2.5 rounded-xl text-white font-bold text-sm transition-all duration-200 shadow-lg shadow-red-500/10 hover:shadow-red-500/20 active:scale-[0.98] bg-[var(--danger)]/80 hover:bg-[var(--danger)]"
-        >
-          Logout
-        </button>
-        <div className="flex items-center gap-3">
+      {/* User Status Bar */}
+      <div className="p-4 bg-[var(--bg-tertiary)] border-t border-white/5">
+        <div className="flex items-center gap-3 p-2 rounded-2xl bg-white/2 token-card shadow-sm group">
           <div className="relative">
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-[0_0_20px_var(--accent-glow)]" style={{ background: 'linear-gradient(135deg, var(--accent), #7e22ce)' }}>
-              {user?.username?.charAt(0).toUpperCase() || '?'}
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-lg border-2 border-white/10 shadow-lg">
+              {user?.username?.charAt(0).toUpperCase()}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-[3px] shadow-sm" style={{ background: 'var(--success)', borderColor: 'var(--bg-secondary)' }} />
+            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-4 border-[var(--bg-tertiary)]" />
           </div>
-          <div className="flex-1 min-w-0 pl-1">
-            <div className="font-bold text-[15px] text-[var(--text-primary)] truncate">{user?.username}</div>
-            <div className="text-xs font-bold text-[var(--text-secondary)] mt-0.5">{user?.isGuest ? 'Guest User' : 'Online'}</div>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] font-black text-[var(--text-primary)] truncate block group-hover:text-[var(--accent)] transition-colors">
+                {user?.username}
+              </span>
+              <button 
+                onClick={logout}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/10 rounded-lg text-[var(--text-muted)] hover:text-red-400"
+                title="Exit Session"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex items-center gap-1">
+               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.isGuest ? 'Hacker/Guest' : 'Verified User'}</span>
+            </div>
           </div>
         </div>
       </div>
