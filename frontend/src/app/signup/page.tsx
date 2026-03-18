@@ -25,8 +25,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup(email, username, password);
-      // Account created — go to login to explicitly sign in
-      router.push('/login');
+      router.push('/chat');
     } catch (err: any) {
       const status = err.response?.status;
       const msg = err.response?.data?.message;
