@@ -8,7 +8,7 @@ import { RoomList } from './RoomList';
 import { ConversationList } from './ConversationList';
 import { getSocket } from '@/lib/socket';
 
-export default function Sidebar() {
+export function Sidebar() {
   const router = useRouter();
   const params = useParams();
   const { user, logout } = useAuthStore();
