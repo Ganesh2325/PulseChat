@@ -25,10 +25,16 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup(email, username, password);
-      router.push('/login');
+      router.push('/chat');
     } catch (err: any) {
       const msg = err.response?.data?.message;
-      setError(Array.isArray(msg) ? msg[0] : (typeof msg === 'string' ? msg : 'Signup failed'));
+      if (Array.isArray(msg)) {
+        setError(msg[0]);
+      } else if (typeof msg === 'string') {
+        setError(msg);
+      } else {
+        setError('Could not create account. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
