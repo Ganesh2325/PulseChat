@@ -73,6 +73,8 @@ interface ChatState {
   unreadCount: number;
   fetchUnreadCount: () => Promise<void>;
   refreshAllData: () => Promise<void>;
+  removeMessage: (messageId: string) => void;
+  clearMessages: () => void;
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
