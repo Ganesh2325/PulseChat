@@ -40,11 +40,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signup: async (email, username, password) => {
-    const { data } = await api.post('/auth/signup', { email, username, password });
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    connectSocket(data.accessToken);
-    set({ user: data.user, isAuthenticated: true });
+    await api.post('/auth/signup', { email, username, password });
+    // Intentionally NOT setting tokens here. User must manually log in next.
   },
 
   guestLogin: async () => {
