@@ -4,8 +4,6 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { createAdapter } from '@socket.io/redis-adapter';
-import { createClient } from 'redis';
 import { RedisIoAdapter } from './chat/redis-io.adapter';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
@@ -18,23 +16,35 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT') || configService.get<number>('BACKEND_PORT', 4000);
-  const corsOrigin = configService.get<string>('CORS_ORIGIN', 'http://localhost:3000');
-  const origins = corsOrigin.split(',').map(o => o.trim());
 
   const jwtSecret = configService.get<string>('JWT_SECRET');
   if (!jwtSecret) {
     logger.error('CRITICAL: JWT_SECRET environment variable is missing!');
   } else {
-    // Log a partial value to confirm it's loaded without exposing the full secret
-    logger.log(`JWT_SECRET is visible (first 4 chars: ${jwtSecret.substring(0, 4)}...)`);
+    logger.log(`JWT_SECRET loaded (first 4 chars: ${jwtSecret.substring(0, 4)}...)`);
   }
 
-  app.enableCors({
-    origin: origins.length > 1 ? origins : origins[0],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  });
+  // CORS: allow explicitly configured origins, or reflect any origin if not configured
+  const corsOrigin = configService.get<string>('CORS_ORIGIN');
+  if (corsOrigin) {
+    const origins = corsOrigin.split(',').map((o: string) => o.trim());
+    app.enableCors({
+      origin: origins.length > 1 ? origins : origins[0],
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    });
+    logger.log(`CORS restricted to: ${origins.join(', ')}`);
+  } else {
+    // No CORS_ORIGIN set — reflect any origin (works for all deployment URLs)
+    app.enableCors({
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    });
+    logger.warn('CORS_ORIGIN not set — allowing any origin. Set CORS_ORIGIN in production for security.');
+  }
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -66,12 +76,11 @@ async function bootstrap() {
   app.useStaticAssets(join(process.cwd(), uploadDir), {
     prefix: '/uploads/',
   });
-  logger.log(`Static assets served from: ${uploadDir}`);
 
   app.enableShutdownHooks();
 
   await app.listen(port);
-  logger.log(`PulseChat backend running on http://localhost:${port}`);
+  logger.log(`PulseChat backend running on port ${port}`);
 }
 
 bootstrap();

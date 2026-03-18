@@ -25,15 +25,21 @@ export default function SignupPage() {
     setIsSubmitting(true);
     try {
       await signup(email, username, password);
-      router.push('/chat');
+      // Account created — go to login to explicitly sign in
+      router.push('/login');
     } catch (err: any) {
+      const status = err.response?.status;
       const msg = err.response?.data?.message;
       if (Array.isArray(msg)) {
         setError(msg[0]);
       } else if (typeof msg === 'string') {
         setError(msg);
+      } else if (status === 409) {
+        setError('Email or username is already taken.');
+      } else if (!err.response) {
+        setError('Cannot reach the server. It may be starting up — please wait a moment and try again.');
       } else {
-        setError('Could not create account. Please try again.');
+        setError('Signup failed. Please check your details and try again.');
       }
     } finally {
       setIsSubmitting(false);
