@@ -1,26 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
-import { RoomList } from './RoomList';
-import { ConversationList } from './ConversationList';
 import { getSocket } from '@/lib/socket';
+import { ConversationList } from './ConversationList';
+
+const CHANNELS = [
+  { id: 'coding', name: 'coding', icon: '💻' },
+  { id: 'gaming', name: 'gaming', icon: '🎮' },
+  { id: 'global', name: 'global', icon: '🌍' },
+  { id: 'random', name: 'random', icon: '🎲' },
+  { id: 'students', name: 'students', icon: '📚' },
+];
 
 interface SidebarProps {
   onClose: () => void;
 }
 
 export function Sidebar({ onClose }: SidebarProps) {
-  const router = useRouter();
-  const params = useParams();
   const { user, logout } = useAuthStore();
-  const { 
-    rooms, 
-    conversations, 
-    fetchRooms, 
-    fetchConversations, 
+  const {
+    rooms,
+    conversations,
+    fetchRooms,
+    fetchConversations,
     createConversation,
     setCurrentRoom,
     setCurrentConversation,
@@ -28,29 +32,22 @@ export function Sidebar({ onClose }: SidebarProps) {
     fetchConversationMessages,
   } = useChatStore();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // Use a ref to prevent double-join on strict mode
-  const refreshAll = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([
-        fetchRooms(),
-        fetchConversations(),
-      ]);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
+  const currentRoomId = useChatStore((s) => s.currentRoom?.id);
+  const currentConversationId = useChatStore((s) => s.currentConversation?.id);
 
   useEffect(() => {
-    refreshAll();
+    fetchRooms();
+    fetchConversations();
   }, []);
 
-  const handleRoomClick = async (room: any) => {
-    setCurrentRoom(room);
-    await fetchRoomMessages(room.id);
-    getSocket()?.emit('room:join', { roomId: room.id });
+  const handleChannelClick = async (channelName: string) => {
+    // Find the room by name (case-insensitive)
+    const room = rooms.find((r) => r.name.toLowerCase() === channelName.toLowerCase());
+    if (room) {
+      setCurrentRoom(room);
+      await fetchRoomMessages(room.id);
+      getSocket()?.emit('room:join', { roomId: room.id });
+    }
     onClose();
   };
 
@@ -66,100 +63,103 @@ export function Sidebar({ onClose }: SidebarProps) {
     if (conv) handleConversationClick(conv);
   };
 
-  const currentRoomId = useChatStore(s => s.currentRoom?.id);
-  const currentConversationId = useChatStore(s => s.currentConversation?.id);
-
   return (
-    <div className="w-80 h-full flex flex-col bg-[var(--bg-secondary)] border-r border-white/5 relative overflow-hidden">
-      {/* Cinematic Header */}
-      <div className="p-6 pb-2">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[var(--accent)] to-purple-500 flex items-center justify-center shadow-[0_8px_20px_var(--accent-glow)]">
-              <span className="text-white text-xl font-black italic">P</span>
-            </div>
-            <div>
-              <h1 className="text-lg font-black tracking-tighter text-[var(--text-primary)]">PULSECHAT</h1>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] font-bold text-green-500/80 uppercase tracking-widest leading-none mt-0.5">Systems Online</span>
-              </div>
-            </div>
-          </div>
-          
-          <button 
-            onClick={refreshAll}
-            className={`p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all ${isRefreshing ? 'animate-spin opacity-50' : ''}`}
-            title="Force Global Refresh"
-          >
-            <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-        </div>
+    <div className="w-72 h-full flex flex-col" style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)' }}>
 
-        {/* Navigation Categories */}
-        <div className="flex items-center gap-1 p-1 bg-[var(--bg-tertiary)] rounded-2xl mb-6">
-          <button className="flex-1 py-1.5 rounded-xl bg-[var(--bg-active)] text-white text-xs font-black shadow-sm tracking-wide uppercase">Chats</button>
-          <button className="flex-1 py-1.5 rounded-xl text-[var(--text-muted)] hover:text-white transition-colors text-xs font-black tracking-wide uppercase">Files</button>
-          <button className="flex-1 py-1.5 rounded-xl text-[var(--text-muted)] hover:text-white transition-colors text-xs font-black tracking-wide uppercase">Store</button>
+      {/* App Header */}
+      <div className="px-5 py-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-lg shadow-lg" style={{ background: 'var(--accent)' }}>
+          P
+        </div>
+        <div>
+          <div className="font-black text-base tracking-tight" style={{ color: 'var(--text-primary)' }}>PulseChat</div>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#22c55e' }}>Online</span>
+          </div>
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 space-y-8 scrollbar-hide py-2">
-        {/* ROOMS / CHANNELS */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-2">
-            <h2 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Public Channels</h2>
-            <span className="text-[10px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-muted)]">{rooms.length}</span>
-          </div>
-          <RoomList 
-            onRoomClick={handleRoomClick} 
-            currentRoomId={currentRoomId} 
-          />
-        </section>
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
 
-        {/* PRIVATE MESSAGES */}
-        <section>
-          <div className="flex items-center justify-between mb-3 px-2">
-            <h2 className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em]">Direct Messages</h2>
-            <span className="text-[10px] font-bold bg-white/5 px-1.5 py-0.5 rounded text-[var(--text-muted)]">{conversations.length}</span>
+        {/* CHANNELS */}
+        <div>
+          <div className="px-2 mb-2 flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Channels</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+              {CHANNELS.length}
+            </span>
           </div>
-          <ConversationList 
+          <div className="space-y-0.5">
+            {CHANNELS.map((ch) => {
+              const room = rooms.find((r) => r.name.toLowerCase() === ch.name.toLowerCase());
+              const isActive = room && currentRoomId === room.id;
+              return (
+                <button
+                  key={ch.id}
+                  onClick={() => handleChannelClick(ch.name)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 text-left"
+                  style={{
+                    background: isActive ? 'var(--accent)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                  }}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span className="text-base">{ch.icon}</span>
+                  <span># {ch.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* DIRECT MESSAGES */}
+        <div>
+          <div className="px-2 mb-2 flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Direct Messages</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}>
+              {conversations.length}
+            </span>
+          </div>
+          <ConversationList
             onConversationClick={handleConversationClick}
             currentConversationId={currentConversationId}
           />
-        </section>
+          {conversations.length === 0 && (
+            <p className="px-3 text-xs italic" style={{ color: 'var(--text-muted)' }}>No direct messages yet.</p>
+          )}
+        </div>
+
       </div>
 
-      {/* User Status Bar */}
-      <div className="p-4 bg-[var(--bg-tertiary)] border-t border-white/5">
-        <div className="flex items-center gap-3 p-2 rounded-2xl bg-white/2 token-card shadow-sm group">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-black text-lg border-2 border-white/10 shadow-lg">
-              {user?.username?.charAt(0).toUpperCase()}
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-4 border-[var(--bg-tertiary)]" />
+      {/* Footer — Logout + User */}
+      <div className="px-4 py-4 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = '#ef444420'; e.currentTarget.style.color = '#ef4444'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-tertiary)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Logout
+        </button>
+
+        {/* User Info */}
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base relative" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            {user?.username?.charAt(0).toUpperCase()}
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2" style={{ borderColor: 'var(--bg-tertiary)' }} />
           </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-black text-[var(--text-primary)] truncate block group-hover:text-[var(--accent)] transition-colors">
-                {user?.username}
-              </span>
-              <button 
-                onClick={logout}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/10 rounded-lg text-[var(--text-muted)] hover:text-red-400"
-                title="Exit Session"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-               <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">{user?.isGuest ? 'Hacker/Guest' : 'Verified User'}</span>
+          <div className="min-w-0">
+            <div className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{user?.username}</div>
+            <div className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>
+              {user?.isGuest ? 'Guest' : 'Verified User'}
             </div>
           </div>
         </div>
