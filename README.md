@@ -87,14 +87,10 @@ pulsechat/
 - 📢 Public rooms (Global, Gaming, Coding, Students, Random)
 - 💬 Direct messages (1:1)
 - 👥 Presence tracking (online/offline)
-- ⌨️ Typing indicators
-- ✅ Read receipts
-- 📎 File uploads (images, videos, documents)
 - 🤖 AI message enhance (improve, rewrite, summarize, translate)
 - 🛡️ Profanity filter & rate limiting
 - 🔔 @mention notifications
 - 📱 Responsive design
-- 🌙 Dark mode
 
 ## Environment Variables
 
