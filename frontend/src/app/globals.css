@@ -208,6 +208,13 @@ input:focus, textarea:focus {
   box-shadow: 0 0 0 1px var(--accent) !important;
 }
 
+/* Auth screens: prevent global dark focus background from bleeding in */
+.auth-surface input:focus,
+.auth-surface textarea:focus {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* Button transitions */
 button {
   transition: all 0.15s ease;
