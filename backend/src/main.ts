@@ -12,14 +12,7 @@ import { execSync } from 'child_process';
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
-  // Force DB migration during startup using db push to bypass strict migration history checks
-  try {
-    logger.log('Starting Prisma schema push...');
-    execSync('npx prisma db push --skip-generate --accept-data-loss', { stdio: 'inherit' });
-    logger.log('Prisma schema synchronized successfully.');
-  } catch (error: any) {
-    logger.error(`Schema push failed: ${error.message}`);
-  }
+  // Database migration should be handled manually via CLI, not during bootstrap.
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
