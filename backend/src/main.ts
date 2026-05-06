@@ -83,8 +83,8 @@ async function bootstrap() {
 
   app.enableShutdownHooks();
 
-  await app.listen(port);
-  logger.log(`PulseChat backend running on port ${port}`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`PulseChat backend running on port ${port} bound to 0.0.0.0`);
 }
 
 bootstrap();
