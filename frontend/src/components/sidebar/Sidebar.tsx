@@ -95,7 +95,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                   }`}
                 >
                   <span className="text-base">{ch.icon}</span>
-                  <span># {ch.name}</span>
+                  <span>{ch.name}</span>
                 </button>
               );
             })}
@@ -122,10 +122,17 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-4 space-y-3 border-t border-[var(--border)] bg-white/20">
+      {/* Footer (Padded wrapper) */}
+      <div className="p-4 border-t border-[var(--border)] bg-white/20 backdrop-blur-md flex flex-col gap-3 shrink-0">
+        {/* Professional Logout Button (Above User, No Icon) */}
+        <button
+          onClick={logout}
+          className="w-full flex items-center justify-center px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 cursor-pointer"
+        >
+          <span>Log Out</span>
+        </button>
 
-        {/* User Card */}
+        {/* User Card (Below Logout Button) */}
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-[var(--border)] bg-white/40 shadow-sm">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-sm relative flex-shrink-0 shadow-sm"
@@ -143,28 +150,6 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
           </div>
         </div>
-
-        {/* Professional Logout Button */}
-        <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border border-slate-200 text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 cursor-pointer"
-        >
-          <svg
-            className="w-4 h-4 flex-shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
-          </svg>
-          <span>Sign Out</span>
-        </button>
-
       </div>
     </aside>
   );

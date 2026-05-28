@@ -40,7 +40,7 @@ export function RoomList({ onRoomClick, currentRoomId }: RoomListProps) {
           onMouseLeave={(e) => { if (currentRoomId !== room.id) e.currentTarget.style.background = 'transparent'; }}
         >
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${currentRoomId === room.id ? 'bg-[var(--accent)] text-white shadow-[0_0_15px_var(--accent-glow)]' : 'bg-white/5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]'}`}>
-            {room.isDefault ? '#' : '🔒'}
+            {room.isDefault ? '💬' : '🔒'}
           </div>
           <span className="truncate flex-1 text-left font-bold">{room.name}</span>
           {room.isSponsored && <span className="text-[10px] opacity-50 bg-white/10 px-1.5 py-0.5 rounded uppercase tracking-tighter">PRO</span>}

@@ -159,14 +159,14 @@ export function MessageComposer({ targetId, targetType, targetName }: MessageCom
           id="send-button"
           onClick={handleSend}
           disabled={!content.trim()}
-          className={`p-2.5 rounded-xl transition-all duration-300 shrink-0 disabled:opacity-30 disabled:scale-95 cursor-pointer ${
+          className={`p-2.5 rounded-xl transition-all duration-300 shrink-0 disabled:opacity-30 disabled:scale-95 cursor-pointer flex items-center justify-center ${
             content.trim() 
               ? 'bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-white shadow-[0_4px_12px_rgba(139,92,246,0.25)]' 
               : 'text-slate-400'
           }`}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12.75 15l3-3m0 0l-3-3m3 3h-7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </button>
       </div>

@@ -135,7 +135,7 @@ export default function SignupPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full h-12 px-4 bg-white/70 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/15 transition-all shadow-sm"
-                    placeholder="e.g. ganesh_pulse"
+                    placeholder="Username"
                     required
                     disabled={isSubmitting}
                   />
@@ -153,7 +153,7 @@ export default function SignupPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-12 px-4 bg-white/70 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/15 transition-all shadow-sm"
-                    placeholder="you@example.com"
+                    placeholder="Email Address"
                     required
                     disabled={isSubmitting}
                   />
