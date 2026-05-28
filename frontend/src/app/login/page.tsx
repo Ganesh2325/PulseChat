@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -32,14 +33,12 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        await login(email, password); // Note: email field acts as emailOrUsername for login
+        await login(email, password);
         router.push('/chat');
       } else {
         await signup(email, username, password);
-        // Automatically switch to login upon successful signup, or auto-login. The previous logic went to /login.
         setIsLogin(true);
         setSuccess('Account created successfully! Please sign in.');
-        // Optionally clear password
         setPassword('');
         setEmail('');
         setUsername('');
@@ -81,100 +80,162 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4 overflow-hidden" style={{ backgroundColor: '#0B1120', fontFamily: '"Inter", sans-serif' }}>
-
-      {/* Background ambient light */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#8B5CF6] rounded-full mix-blend-screen filter blur-[150px] opacity-20 animate-float" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#7C3AED] rounded-full mix-blend-screen filter blur-[150px] opacity-10 animate-float delay-1000" />
+    <div className="flex items-center justify-center min-h-screen p-4 overflow-hidden relative" style={{ backgroundColor: '#F8FAFC', fontFamily: '"Inter", sans-serif' }}>
+      
+      {/* Premium ambient glowing backgrounds */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-violet-200 rounded-full mix-blend-multiply filter blur-[120px] opacity-30 animate-float pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-200 rounded-full mix-blend-multiply filter blur-[120px] opacity-25 animate-float-delayed pointer-events-none" />
 
       {/* Main Container */}
       <div
-        className="relative z-10 w-full max-w-[1000px] h-[600px] rounded-[20px] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_40px_rgba(139,92,246,0.15)] overflow-hidden flex animate-slide-up bg-[#111827] border"
-        style={{ borderColor: 'rgba(139, 92, 246, 0.2)' }}
+        className="relative z-10 w-full max-w-[1000px] min-h-[600px] rounded-[30px] shadow-[0_20px_50px_rgba(139,92,246,0.06),0_0_40px_rgba(255,255,255,0.4)] overflow-hidden flex flex-col md:flex-row animate-slide-up bg-white/40 backdrop-blur-2xl border"
+        style={{ borderColor: 'rgba(139, 92, 246, 0.15)' }}
       >
-
-        {/* RIGHT PANEL - FORM SECTION (Rendered first in DOM, physically right or left depending on toggle) */}
+        
+        {/* LEFT PANEL - BRANDING SECTION (Translucent violet glass backdrop) */}
         <div
-          className={`absolute top-0 w-1/2 h-full transition-all duration-700 ease-in-out flex items-center justify-center p-[48px] ${isLogin ? 'right-0 translate-x-0' : 'right-0 -translate-x-full'
-            }`}
+          className={`w-full md:w-1/2 flex flex-col items-center justify-center p-12 text-center text-slate-800 relative overflow-hidden transition-all duration-700 ease-in-out border-b md:border-b-0 md:border-r ${
+            isLogin ? 'md:order-first' : 'md:order-last'
+          }`}
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(196, 181, 253, 0.15))',
+            borderColor: 'rgba(139, 92, 246, 0.12)'
+          }}
         >
+          {/* Subtle decoration elements */}
+          <div className="absolute top-[-20%] left-[-20%] w-[320px] h-[320px] bg-white/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] bg-violet-200/30 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col items-center max-w-[340px]">
+            {/* Logo */}
+            <div className="w-16 h-16 bg-white rounded-2xl border border-violet-100 flex items-center justify-center mb-8 shadow-[0_12px_24px_rgba(139,92,246,0.12)] animate-pulse-slow">
+              <svg className="w-8 h-8 text-[#8B5CF6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+
+            <h1 className="text-3xl font-extrabold mb-4 tracking-tight text-slate-900 leading-tight">
+              {isLogin ? 'Welcome to PulseChat' : 'Start Your Journey'}
+            </h1>
+            <p className="text-slate-600 text-base mb-8 leading-relaxed font-medium">
+              {isLogin
+                ? 'Experience real-time lightning-fast conversations in a minimal, frosted interface.'
+                : 'Create an account to connect instantly with communities around the globe.'}
+            </p>
+
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+                setSuccess('');
+              }}
+              className="px-6 py-2.5 rounded-xl font-bold border border-[#8B5CF6] text-[#8B5CF6] transition-all duration-300 hover:bg-[#8B5CF6]/10 hover:shadow-[0_8px_20px_rgba(139,92,246,0.1)] hover:scale-105 active:scale-95 text-sm cursor-pointer"
+            >
+              {isLogin ? 'Create Account' : 'Sign In Instead'}
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT PANEL - FORM SECTION */}
+        <div className="w-full md:w-1/2 flex items-center justify-center p-8 md:p-12">
           <div className="w-full max-w-[360px] m-auto text-center">
-            <div className="mb-6">
-              <h2 className="text-3xl font-bold text-[#E5E7EB] mb-2">
-                {isLogin ? 'Sign In' : 'Create Account'}
+            <div className="mb-8">
+              <h2 className="text-2xl font-black text-slate-900 mb-2">
+                {isLogin ? 'Sign In' : 'Sign Up'}
               </h2>
-              <p className="text-[#9CA3AF]">
-                {isLogin ? 'Welcome back! Please enter your details.' : 'Join PulseChat and connect instantly.'}
+              <p className="text-slate-500 text-sm">
+                {isLogin ? 'Enter your details below to access your account' : 'Provide your information to sign up'}
               </p>
             </div>
 
             {error && (
-              <div className="mb-6 p-3 rounded-lg text-sm text-red-400 border border-red-500/20 bg-red-500/10">
-                {error}
+              <div className="mb-5 p-3.5 rounded-xl text-xs text-red-600 border border-red-200 bg-red-50/80 backdrop-blur-sm text-left font-semibold">
+                ⚠️ {error}
               </div>
             )}
             {success && (
-              <div className="mb-6 p-3 rounded-lg text-sm text-emerald-400 border border-emerald-500/20 bg-emerald-500/10">
-                {success}
+              <div className="mb-5 p-3.5 rounded-xl text-xs text-emerald-600 border border-emerald-200 bg-emerald-50/80 backdrop-blur-sm text-left font-semibold">
+                ✓ {success}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-[18px]">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {/* Username field (Signup only) */}
-              <div className={`overflow-hidden transition-all duration-500 ease-in-out ${isLogin ? 'max-h-0 opacity-0' : 'max-h-[70px] opacity-100'}`}>
+              {(!isLogin) && (
+                <div className="text-left">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Username</label>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </span>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full h-12 pl-11 pr-4 bg-white/70 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/15 transition-all shadow-sm"
+                      placeholder="e.g. ganesh_pulse"
+                      required={!isLogin}
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email field */}
+              <div className="text-left">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">
+                  {isLogin ? 'Email or Username' : 'Email Address'}
+                </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-[14px] flex items-center pointer-events-none text-[#9CA3AF]"> </div>
+                  <span className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </span>
                   <input
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full h-[52px] pl-[44px] pr-[16px] py-[14px] bg-[#1F2937] border border-transparent rounded-[12px] text-[#E5E7EB] text-left placeholder-[#9CA3AF] focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] transition-all duration-300 shadow-sm"
-                    placeholder="Username"
-                    required={!isLogin}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-12 pl-11 pr-4 bg-white/70 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/15 transition-all shadow-sm"
+                    placeholder={isLogin ? "username or email" : "you@example.com"}
+                    required
                     disabled={isSubmitting}
                   />
                 </div>
               </div>
 
-              {/* Email field */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-[14px] flex items-center pointer-events-none text-[#9CA3AF]">
-                </div>
-                <input
-                  type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-[52px] pl-[44px] pr-[16px] py-[14px] bg-[#1F2937] border border-transparent rounded-[12px] text-[#E5E7EB] text-left placeholder-[#9CA3AF] focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] transition-all duration-300 shadow-sm"
-                  placeholder={isLogin ? 'Email or Username' : 'Email address'}
-                  required
-                  disabled={isSubmitting}
-                />
-              </div>
-
               {/* Password field */}
-              <div className="relative">
-                <div className="absolute inset-y-0 left-[14px] flex items-center pointer-events-none text-[#9CA3AF]">
+              <div className="text-left">
+                <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Password</label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full h-12 pl-11 pr-4 bg-white/70 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/15 transition-all shadow-sm"
+                    placeholder="••••••••"
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full h-[52px] pl-[44px] pr-[16px] py-[14px] bg-[#1F2937] border border-transparent rounded-[12px] text-[#E5E7EB] text-left placeholder-[#9CA3AF] focus:outline-none focus:border-[#8B5CF6] focus:ring-1 focus:ring-[#8B5CF6] transition-all duration-300 shadow-sm"
-                  placeholder="Password"
-                  required
-                  disabled={isSubmitting}
-                />
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full h-[52px] mt-[26px] rounded-[12px] font-semibold text-white transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_0_15px_rgba(139,92,246,0.5)] active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100"
+                className="w-full h-12 mt-4 rounded-xl font-bold text-white transition-all duration-300 transform hover:scale-[1.02] hover:shadow-[0_8px_24px_rgba(139,92,246,0.3)] active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100 cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)' }}
               >
                 {isSubmitting
-                  ? (isLogin ? 'Signing In...' : 'Creating Account...')
-                  : (isLogin ? 'Sign In' : 'Create Account')}
+                  ? (isLogin ? 'Signing In...' : 'Registering...')
+                  : (isLogin ? 'Sign In' : 'Sign Up')}
               </button>
             </form>
 
@@ -183,21 +244,21 @@ export default function LoginPage() {
                 <button
                   onClick={handleGuest}
                   disabled={isSubmitting}
-                  className="w-full h-[52px] mb-4 rounded-[12px] font-medium text-[#E5E7EB] bg-[#1F2937] border border-[rgba(139,92,246,0.3)] transition-all duration-300 hover:bg-[#374151] hover:border-[#8B5CF6] active:scale-[0.98]"
+                  className="w-full h-12 rounded-xl font-bold text-[#8B5CF6] bg-violet-50 border border-violet-100 transition-all duration-300 hover:bg-violet-100 hover:border-violet-200 active:scale-[0.98] cursor-pointer"
                 >
                   Continue as Guest
                 </button>
               )}
 
-              <p className="text-center text-sm text-[#9CA3AF] mt-4">
-                {isLogin ? "New user don't have an account ? " : 'Already have an account? '}
+              <p className="text-center text-xs text-slate-500 mt-6 font-semibold">
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
                 <button
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setError('');
                     setSuccess('');
                   }}
-                  className="text-[#8B5CF6] font-medium hover:text-[#A78BFA] transition-colors hover:underline underline-offset-4"
+                  className="text-[#8B5CF6] font-bold hover:text-[#7C3AED] hover:underline underline-offset-4 cursor-pointer"
                   type="button"
                 >
                   {isLogin ? 'Sign up' : 'Sign in'}
@@ -206,62 +267,16 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-
-        {/* LEFT PANEL - BRANDING SECTION (Sliding overlay) */}
-        <div
-          className={`absolute top-0 w-1/2 h-full z-20 transition-all duration-700 ease-in-out flex flex-col items-center justify-center p-12 text-center text-white overflow-hidden ${isLogin ? 'left-0' : 'left-1/2'
-            }`}
-          style={{ background: 'linear-gradient(135deg, #7C3AED, #4C1D95)' }}
-        >
-          {/* Decorative shapes */}
-          <div className="absolute top-[-10%] left-[-20%] w-[300px] h-[300px] bg-white/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-[-10%] right-[-20%] w-[300px] h-[300px] bg-black/20 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative z-10 flex flex-col items-center">
-            {/* Logo */}
-            <div className="w-20 h-20 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20 flex items-center justify-center mb-6 shadow-xl animate-pulse-slow">
-              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-            </div>
-
-            <div className="transition-all duration-500 transform">
-              <h1 className="text-4xl font-bold mb-4 tracking-tight">
-                {isLogin ? 'Welcome Back' : 'Hello, Friend'}
-              </h1>
-              <p className="text-white/80 text-lg mb-8 leading-relaxed max-w-[250px]">
-                {isLogin
-                  ? 'Connect instantly with your network on PulseChat.'
-                  : 'Enter your details and start your journey with us.'}
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError('');
-                setSuccess('');
-              }}
-              className="px-8 py-3 rounded-md font-semibold border border-white/40 text-white transition-all duration-300 hover:bg-white/10 hover:border-white hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95"
-            >
-              {isLogin ? 'Sign Up' : 'Sign In'}
-            </button>
-          </div>
-        </div>
       </div>
-
-      {/* Additional inline styles for specific focus glow if tailwind variants aren't enough */}
+      
       <style dangerouslySetInnerHTML={{
         __html: `
-        input:focus {
-          box-shadow: 0 0 10px rgba(139, 92, 246, 0.6) !important;
-        }
         .animate-pulse-slow {
-          animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          animation: pulse-slow 5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @keyframes pulse-slow {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.03); opacity: 0.95; }
         }
       `}} />
     </div>

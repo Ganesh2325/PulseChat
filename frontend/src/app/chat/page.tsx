@@ -8,7 +8,12 @@ import { useSocketEvents } from '@/hooks/useSocket';
 import { Sidebar } from '@/components/sidebar/Sidebar';
 import { ChatView } from '@/components/chat/ChatView';
 import { WelcomeView } from '@/components/chat/WelcomeView';
-import { ForwardingModal } from '@/components/chat/ForwardingModal';
+import dynamic from 'next/dynamic';
+
+const ForwardingModal = dynamic(
+  () => import('@/components/chat/ForwardingModal').then((m) => m.ForwardingModal),
+  { ssr: false }
+);
 
 export default function ChatPage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
@@ -39,33 +44,33 @@ export default function ChatPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-[var(--bg-primary)]">
       {/* Mobile toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-3 left-3 z-50 p-2 rounded-lg md:hidden"
+        className="fixed top-4 left-4 z-50 p-3 rounded-2xl md:hidden glass-panel shadow-[0_8px_32px_rgba(139,92,246,0.08)] cursor-pointer text-[var(--text-primary)] transition-all hover:scale-105 active:scale-95"
         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)' }}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-40 transition-transform duration-200 h-full`}>
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:relative z-40 transition-transform duration-300 h-full`}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-30 md:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-full relative">
         {currentRoom || currentConversation ? <ChatView /> : <WelcomeView />}
       </div>
 

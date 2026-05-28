@@ -18,21 +18,21 @@ export function DeleteMessageModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-fade-in">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/25 backdrop-blur-sm animate-fade-in" onClick={onCancel}>
       <div 
-        className="bg-[var(--bg-surface-l3)] w-full max-w-[340px] rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.6)] overflow-hidden animate-pop-in border border-white/5"
+        className="bg-white/95 backdrop-blur-xl w-full max-w-[340px] rounded-[30px] shadow-[0_24px_50px_rgba(139,92,246,0.15)] overflow-hidden animate-pop-in border border-[var(--border)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-8 pt-8 pb-4">
-          <h2 className="text-[20px] font-black text-white tracking-tight">Delete message?</h2>
-          <p className="text-[14px] text-[var(--text-secondary)] mt-2 font-medium">This action cannot be undone.</p>
+        <div className="px-7 pt-7 pb-3">
+          <h2 className="text-[19px] font-extrabold text-slate-800 tracking-tight">Delete message?</h2>
+          <p className="text-[13.5px] text-slate-500 mt-1.5 font-semibold leading-relaxed">This action cannot be undone.</p>
         </div>
 
         <div className="flex flex-col p-2">
           {canDeleteForEveryone && (
             <button 
               onClick={(e) => { e.stopPropagation(); onDeleteEveryone(); }}
-              className="w-full px-6 py-4 text-left text-[15px] font-black text-red-400 hover:bg-red-500/10 active:bg-red-500/20 transition-all rounded-2xl"
+              className="w-full px-6 py-3.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 active:bg-red-100 transition-all rounded-2xl cursor-pointer"
             >
               Delete For Everyone
             </button>
@@ -40,14 +40,14 @@ export function DeleteMessageModal({
           
           <button 
             onClick={(e) => { e.stopPropagation(); onDeleteMe(); }}
-            className="w-full px-6 py-4 text-left text-[15px] font-black text-[var(--accent)] hover:bg-[var(--accent)]/10 active:bg-[var(--accent)]/20 transition-all rounded-2xl"
+            className="w-full px-6 py-3.5 text-left text-sm font-bold text-[#8B5CF6] hover:bg-[#8B5CF6]/5 active:bg-[#8B5CF6]/10 transition-all rounded-2xl cursor-pointer"
           >
             Delete For Me
           </button>
 
           <button 
             onClick={(e) => { e.stopPropagation(); onCancel(); }}
-            className="w-full px-6 py-4 text-left text-[15px] font-black text-[var(--text-secondary)] hover:bg-white/5 active:bg-white/10 transition-all rounded-2xl"
+            className="w-full px-6 py-3.5 text-left text-sm font-bold text-slate-400 hover:bg-slate-50 active:bg-slate-100 transition-all rounded-2xl cursor-pointer"
           >
             Cancel
           </button>

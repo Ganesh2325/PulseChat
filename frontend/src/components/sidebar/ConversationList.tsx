@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useChatStore } from '@/stores/chatStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -17,7 +18,7 @@ export function ConversationList({ onConversationClick, currentConversationId }:
   if (conversations.length === 0) {
     return (
       <div className="p-4 text-center">
-        <p className="text-[11px] text-[var(--text-muted)] italic opacity-60">No private chats yet.</p>
+        <p className="text-[11px] text-slate-400 italic font-medium">No private chats yet.</p>
       </div>
     );
   }
@@ -33,22 +34,32 @@ export function ConversationList({ onConversationClick, currentConversationId }:
           <div key={conv.id} className="group relative">
             <button
               onClick={() => onConversationClick(conv)}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 pr-10 relative group-hover:shadow-lg ${isActive ? 'bg-[var(--accent)] shadow-[0_8px_20px_var(--accent-glow)]' : 'hover:bg-[var(--bg-hover)]'}`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 pr-10 relative group-hover:shadow-sm cursor-pointer ${
+                isActive 
+                  ? 'bg-gradient-to-r from-[#8B5CF6] to-[#A78BFA] text-white shadow-[0_4px_12px_rgba(139,92,246,0.2)]' 
+                  : 'hover:bg-[#8B5CF6]/8 text-slate-600'
+              }`}
             >
-              <div className="relative">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shadow-sm ${isActive ? 'bg-white/20 text-white' : 'bg-[var(--bg-tertiary)] text-[var(--text-secondary)]'}`}>
+              <div className="relative flex-shrink-0">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shadow-sm transition-colors ${
+                  isActive 
+                    ? 'bg-white/20 text-white' 
+                    : 'bg-white border border-slate-100 text-[#8B5CF6]'
+                }`}>
                   {other?.username?.charAt(0).toUpperCase() || '?'}
                 </div>
                 {isOnline && (
-                  <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 ${isActive ? 'bg-white border-[var(--accent)]' : 'bg-green-500 border-[var(--bg-secondary)]'} shadow-sm`} />
+                  <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 ${
+                    isActive ? 'bg-white border-[#8B5CF6]' : 'bg-green-500 border-white'
+                  } shadow-sm`} />
                 )}
               </div>
 
               <div className="flex-1 text-left min-w-0 pr-2">
-                <div className={`truncate font-bold text-[15px] ${isActive ? 'text-white' : 'text-[var(--text-primary)]'}`}>
+                <div className={`truncate font-extrabold text-[14px] leading-tight ${isActive ? 'text-white' : 'text-slate-800'}`}>
                   {other?.username || 'Unknown'}
                 </div>
-                <div className={`truncate text-xs font-medium mt-0.5 opacity-80 ${isActive ? 'text-white/80' : 'text-[var(--text-secondary)]'}`}>
+                <div className={`truncate text-xs font-semibold mt-1 ${isActive ? 'text-white/80' : 'text-slate-400'}`}>
                   {conv.lastMessage ? conv.lastMessage.content : <span className="italic opacity-50">Empty conversation</span>}
                 </div>
               </div>
@@ -61,7 +72,11 @@ export function ConversationList({ onConversationClick, currentConversationId }:
                   deleteConversation(conv.id);
                 }
               }}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 ${isActive ? 'text-white/60 hover:text-white hover:bg-white/10' : 'text-[var(--text-muted)] hover:text-red-400 hover:bg-red-400/10'}`}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all duration-200 opacity-0 group-hover:opacity-100 cursor-pointer ${
+                isActive 
+                  ? 'text-white/60 hover:text-white hover:bg-white/10' 
+                  : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
+              }`}
               title="Delete"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

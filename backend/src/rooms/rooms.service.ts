@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ConflictException, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 const DEFAULT_ROOMS = [
   { name: 'global', description: 'General discussion for everyone', isDefault: true },
@@ -13,7 +14,10 @@ const DEFAULT_ROOMS = [
 export class RoomsService implements OnModuleInit {
   private readonly logger = new Logger(RoomsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async onModuleInit() {
     await this.seedDefaultRooms();
@@ -30,7 +34,33 @@ export class RoomsService implements OnModuleInit {
     this.logger.log('Default rooms seeded');
   }
 
+  private async invalidateUserRoomsCache(userId: string) {
+    try {
+      await this.redis.deleteCache(`user:${userId}:rooms`);
+    } catch (err) {
+      this.logger.error(`Redis user rooms cache invalidation error: ${err.message}`);
+    }
+  }
+
+  private async invalidateRoomDetailsCache(roomId: string) {
+    try {
+      await this.redis.deleteCache(`room:details:${roomId}`);
+    } catch (err) {
+      this.logger.error(`Redis room details cache invalidation error: ${err.message}`);
+    }
+  }
+
   async listRooms(userId: string) {
+    const cacheKey = `user:${userId}:rooms`;
+    try {
+      const cached = await this.redis.getCache(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (err) {
+      this.logger.error(`Redis read error: ${err.message}`);
+    }
+
     const rooms = await this.prisma.room.findMany({
       include: { 
         members: { where: { userId } },
@@ -38,7 +68,7 @@ export class RoomsService implements OnModuleInit {
       },
       orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
     });
-    return rooms.map((room) => ({
+    const result = rooms.map((room) => ({
       ...room,
       memberCount: room._count.members,
       messageCount: room._count.messages,
@@ -46,15 +76,41 @@ export class RoomsService implements OnModuleInit {
       members: undefined,
       _count: undefined,
     }));
+
+    try {
+      await this.redis.setCache(cacheKey, JSON.stringify(result), 300); // 5 minutes cache
+    } catch (err) {
+      this.logger.error(`Redis write error: ${err.message}`);
+    }
+
+    return result;
   }
 
   async getRoom(id: string) {
+    const cacheKey = `room:details:${id}`;
+    try {
+      const cached = await this.redis.getCache(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (err) {
+      this.logger.error(`Redis read error: ${err.message}`);
+    }
+
     const room = await this.prisma.room.findUnique({
       where: { id },
       include: { _count: { select: { members: true } } },
     });
     if (!room) throw new NotFoundException('Room not found');
-    return { ...room, memberCount: room._count.members, _count: undefined };
+    const result = { ...room, memberCount: room._count.members, _count: undefined };
+
+    try {
+      await this.redis.setCache(cacheKey, JSON.stringify(result), 1800); // 30 minutes cache
+    } catch (err) {
+      this.logger.error(`Redis write error: ${err.message}`);
+    }
+
+    return result;
   }
 
   async createRoom(userId: string, data: { name: string; description?: string }) {
@@ -69,6 +125,8 @@ export class RoomsService implements OnModuleInit {
       data: { userId, roomId: room.id },
     });
 
+    await this.invalidateUserRoomsCache(userId);
+
     return room;
   }
 
@@ -82,6 +140,9 @@ export class RoomsService implements OnModuleInit {
       create: { userId, roomId },
     });
 
+    await this.invalidateUserRoomsCache(userId);
+    await this.invalidateRoomDetailsCache(roomId);
+
     return { message: 'Joined room', roomId };
   }
 
@@ -89,6 +150,10 @@ export class RoomsService implements OnModuleInit {
     await this.prisma.roomMember.deleteMany({
       where: { userId, roomId },
     });
+
+    await this.invalidateUserRoomsCache(userId);
+    await this.invalidateRoomDetailsCache(roomId);
+
     return { message: 'Left room', roomId };
   }
 
@@ -149,6 +214,7 @@ export class RoomsService implements OnModuleInit {
       where: { userId_roomId: { userId, roomId } },
       data: { lastReadAt: new Date() },
     });
+    await this.invalidateUserRoomsCache(userId);
     return { success: true };
   }
 }

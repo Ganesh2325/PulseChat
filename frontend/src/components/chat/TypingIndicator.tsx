@@ -12,13 +12,13 @@ export function TypingIndicator({ usernames }: TypingIndicatorProps) {
     : `${usernames[0]} and ${usernames.length - 1} others are typing`;
 
   return (
-    <div className="px-5 py-2.5 text-[13px] animate-fade-in flex items-center gap-3" style={{ color: 'var(--text-muted)', background: 'var(--bg-primary)' }}>
-      <div className="flex gap-1.5 px-3 py-2 rounded-2xl bg-slate-100/50 shadow-sm">
+    <div className="px-6 py-2 text-xs animate-fade-in flex items-center gap-2.5 bg-transparent select-none">
+      <div className="flex gap-1 px-2.5 py-1.5 rounded-full bg-white/60 border border-slate-100 shadow-sm">
         <span className="typing-dot" />
         <span className="typing-dot" />
         <span className="typing-dot" />
       </div>
-      <span className="font-semibold italic text-slate-500">{text}...</span>
+      <span className="font-semibold italic text-slate-400">{text}...</span>
     </div>
   );
 }
