@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "build": "npx prisma generate && npx nest build",
+    "postinstall": "npm run build",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:prod": "npx prisma migrate deploy && node dist/main"
